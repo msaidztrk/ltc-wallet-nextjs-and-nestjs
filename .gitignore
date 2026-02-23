@@ -125,3 +125,4 @@ dist
 # NestJS specific
 backend/dist/
 backend/dist-test/
+/.agents
