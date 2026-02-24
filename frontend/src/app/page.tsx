@@ -86,7 +86,7 @@ export default function AuthPage() {
 
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '1.8rem', fontWeight: 700, margin: '0 0 0.5rem 0', letterSpacing: '-0.5px' }}>
-            Vault<span style={{ color: 'var(--primary-accent)' }}>X</span>
+            Wallut<span style={{ color: 'var(--primary-accent)' }}>.</span>
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
             Secure Litecoin Cold Storage
@@ -100,7 +100,7 @@ export default function AuthPage() {
               id="email"
               type="email"
               className="input-premium"
-              placeholder="operator@vaultx.com"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -133,7 +133,7 @@ export default function AuthPage() {
               className="btn-primary"
               disabled={isLoading}
             >
-              {isLoading ? 'Authorizing...' : 'Enter Vault'}
+              {isLoading ? 'Authorizing...' : 'Enter Wallut'}
             </button>
 
             <button
@@ -145,6 +145,9 @@ export default function AuthPage() {
             >
               Initialize New Identity
             </button>
+            <p style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0.5rem 0 0 0' }}>
+              ⚠️ Supabase güvenlik politikası gereği 1 saat içerisinde en fazla 3 kayıt işlemi yapılabilir.
+            </p>
           </div>
         </form>
 
