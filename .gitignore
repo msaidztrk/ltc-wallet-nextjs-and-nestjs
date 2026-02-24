@@ -126,3 +126,4 @@ dist
 backend/dist/
 backend/dist-test/
 /.agents
+tasks.md
