@@ -68,4 +68,53 @@ export class WalletService {
             throw new InternalServerErrorException('Wallet generation process failed');
         }
     }
+
+    async retrieveWalletsForUser(authenticatedUserId: string) {
+        try {
+            const { data: retrievedWalletsDatabaseQuery, error: databaseSelectionError } = await this.databaseManager.databaseClient
+                .from('wallets')
+                .select('id, name, created_at, encrypted_mnemonic')
+                .eq('user_id', authenticatedUserId);
+
+            if (databaseSelectionError) throw databaseSelectionError;
+
+            return retrievedWalletsDatabaseQuery;
+        } catch (fetchException) {
+            throw new InternalServerErrorException('Failed to retrieve wallets');
+        }
+    }
+
+    async modifyWalletName(authenticatedUserId: string, targetWalletId: string, updatedWalletIdentifierName: string) {
+        try {
+            const { data: updatedWalletRecordQuery, error: databaseUpdateError } = await this.databaseManager.databaseClient
+                .from('wallets')
+                .update({ name: updatedWalletIdentifierName })
+                .eq('id', targetWalletId)
+                .eq('user_id', authenticatedUserId)
+                .select('id, name, created_at')
+                .single();
+
+            if (databaseUpdateError) throw databaseUpdateError;
+
+            return updatedWalletRecordQuery;
+        } catch (updateException) {
+            throw new InternalServerErrorException('Failed to update wallet name');
+        }
+    }
+
+    async removeWalletRecord(authenticatedUserId: string, targetWalletId: string) {
+        try {
+            const { error: databaseDeletionError } = await this.databaseManager.databaseClient
+                .from('wallets')
+                .delete()
+                .eq('id', targetWalletId)
+                .eq('user_id', authenticatedUserId);
+
+            if (databaseDeletionError) throw databaseDeletionError;
+
+            return { isDeleted: true, targetWalletDeletedId: targetWalletId };
+        } catch (deletionException) {
+            throw new InternalServerErrorException('Failed to delete target wallet record');
+        }
+    }
 }

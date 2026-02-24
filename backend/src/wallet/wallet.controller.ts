@@ -1,6 +1,8 @@
-import { Body, Controller, Post, HttpCode, HttpStatus, UnauthorizedException, BadRequestException, Req } from '@nestjs/common';
+import { Body, Controller, Post, Get, Patch, Delete, Param, HttpCode, HttpStatus, Req } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import type { Request } from 'express';
+import { CreateWalletDto } from './dto/create-wallet.dto';
+import { UpdateWalletDto } from './dto/update-wallet.dto';
 
 @Controller('wallets')
 export class WalletController {
@@ -10,23 +12,71 @@ export class WalletController {
     @HttpCode(HttpStatus.CREATED)
     async createNewWallet(
         @Req() incomingHttpRequest: Request,
-        @Body('name') newWalletIdentifierName: string,
+        @Body() walletPayloadData: CreateWalletDto,
     ) {
-
-        const mockAuthenticatedUserId = '00000000-0000-0000-0000-000000000000';
-
-        if (!newWalletIdentifierName || newWalletIdentifierName.trim().length === 0) {
-            throw new BadRequestException('Wallet identifier name is required');
-        }
+        const authenticatedUserId = incomingHttpRequest['authenticatedUser'].id;
 
         const generatedWalletInfo = await this.walletManagementService.createWalletRecord(
-            mockAuthenticatedUserId,
-            newWalletIdentifierName.trim()
+            authenticatedUserId,
+            walletPayloadData.name.trim()
         );
 
         return {
             status: 'success',
             data: generatedWalletInfo,
+        };
+    }
+
+    @Get()
+    @HttpCode(HttpStatus.OK)
+    async fetchUserWallets(@Req() incomingHttpRequest: Request) {
+        const authenticatedUserId = incomingHttpRequest['authenticatedUser'].id;
+
+        const fetchedWalletsList = await this.walletManagementService.retrieveWalletsForUser(authenticatedUserId);
+
+        return {
+            status: 'success',
+            data: fetchedWalletsList,
+        };
+    }
+
+    @Patch(':id')
+    @HttpCode(HttpStatus.OK)
+    async renameWallet(
+        @Req() incomingHttpRequest: Request,
+        @Param('id') targetWalletId: string,
+        @Body() walletPayloadData: UpdateWalletDto,
+    ) {
+        const authenticatedUserId = incomingHttpRequest['authenticatedUser'].id;
+
+        const modifiedWalletData = await this.walletManagementService.modifyWalletName(
+            authenticatedUserId,
+            targetWalletId,
+            walletPayloadData.name.trim()
+        );
+
+        return {
+            status: 'success',
+            data: modifiedWalletData,
+        };
+    }
+
+    @Delete(':id')
+    @HttpCode(HttpStatus.OK)
+    async destroyWallet(
+        @Req() incomingHttpRequest: Request,
+        @Param('id') targetWalletId: string,
+    ) {
+        const authenticatedUserId = incomingHttpRequest['authenticatedUser'].id;
+
+        const outputDeletionData = await this.walletManagementService.removeWalletRecord(
+            authenticatedUserId,
+            targetWalletId
+        );
+
+        return {
+            status: 'success',
+            data: outputDeletionData,
         };
     }
 }
