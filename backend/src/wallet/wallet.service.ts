@@ -27,7 +27,7 @@ export class WalletService {
         private readonly databaseManager: SupabaseService,
     ) { }
 
-    async createWalletRecord(authenticatedUserId: string, walletIdentifierName: string) {
+    async createWalletRecord(authenticatedUserId: string, walletIdentifierName: string, jwtToken: string) {
         try {
             const newlyGeneratedMnemonicSeed = bip39.generateMnemonic();
             const rootSeedBuffer = await bip39.mnemonicToSeed(newlyGeneratedMnemonicSeed);
@@ -44,7 +44,7 @@ export class WalletService {
 
             const securelyEncryptedMnemonic = this.cryptoManager.encryptData(newlyGeneratedMnemonicSeed);
 
-            const { data: insertedWalletRecord, error: databaseInsertionError } = await this.databaseManager.databaseClient
+            const { data: insertedWalletRecord, error: databaseInsertionError } = await this.databaseManager.getClient(jwtToken)
                 .from('wallets')
                 .insert([
                     {
@@ -56,7 +56,10 @@ export class WalletService {
                 .select()
                 .single();
 
-            if (databaseInsertionError) throw databaseInsertionError;
+            if (databaseInsertionError) {
+                console.error('Supabase Insertion Error:', databaseInsertionError);
+                throw databaseInsertionError;
+            }
 
             return {
                 id: insertedWalletRecord.id,
@@ -65,13 +68,14 @@ export class WalletService {
                 createdAt: insertedWalletRecord.created_at,
             };
         } catch (walletCreationException) {
+            console.error('Wallet generation failed:', walletCreationException);
             throw new InternalServerErrorException('Wallet generation process failed');
         }
     }
 
-    async retrieveWalletsForUser(authenticatedUserId: string) {
+    async retrieveWalletsForUser(authenticatedUserId: string, jwtToken: string) {
         try {
-            const { data: retrievedWalletsDatabaseQuery, error: databaseSelectionError } = await this.databaseManager.databaseClient
+            const { data: retrievedWalletsDatabaseQuery, error: databaseSelectionError } = await this.databaseManager.getClient(jwtToken)
                 .from('wallets')
                 .select('id, name, created_at, encrypted_mnemonic')
                 .eq('user_id', authenticatedUserId);
@@ -84,9 +88,9 @@ export class WalletService {
         }
     }
 
-    async modifyWalletName(authenticatedUserId: string, targetWalletId: string, updatedWalletIdentifierName: string) {
+    async modifyWalletName(authenticatedUserId: string, targetWalletId: string, updatedWalletIdentifierName: string, jwtToken: string) {
         try {
-            const { data: updatedWalletRecordQuery, error: databaseUpdateError } = await this.databaseManager.databaseClient
+            const { data: updatedWalletRecordQuery, error: databaseUpdateError } = await this.databaseManager.getClient(jwtToken)
                 .from('wallets')
                 .update({ name: updatedWalletIdentifierName })
                 .eq('id', targetWalletId)
@@ -102,9 +106,9 @@ export class WalletService {
         }
     }
 
-    async removeWalletRecord(authenticatedUserId: string, targetWalletId: string) {
+    async removeWalletRecord(authenticatedUserId: string, targetWalletId: string, jwtToken: string) {
         try {
-            const { error: databaseDeletionError } = await this.databaseManager.databaseClient
+            const { error: databaseDeletionError } = await this.databaseManager.getClient(jwtToken)
                 .from('wallets')
                 .delete()
                 .eq('id', targetWalletId)

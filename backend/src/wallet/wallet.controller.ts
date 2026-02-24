@@ -15,10 +15,12 @@ export class WalletController {
         @Body() walletPayloadData: CreateWalletDto,
     ) {
         const authenticatedUserId = incomingHttpRequest['authenticatedUser'].id;
+        const jwtToken = incomingHttpRequest['jwtToken'];
 
         const generatedWalletInfo = await this.walletManagementService.createWalletRecord(
             authenticatedUserId,
-            walletPayloadData.name.trim()
+            walletPayloadData.name.trim(),
+            jwtToken
         );
 
         return {
@@ -31,8 +33,9 @@ export class WalletController {
     @HttpCode(HttpStatus.OK)
     async fetchUserWallets(@Req() incomingHttpRequest: Request) {
         const authenticatedUserId = incomingHttpRequest['authenticatedUser'].id;
+        const jwtToken = incomingHttpRequest['jwtToken'];
 
-        const fetchedWalletsList = await this.walletManagementService.retrieveWalletsForUser(authenticatedUserId);
+        const fetchedWalletsList = await this.walletManagementService.retrieveWalletsForUser(authenticatedUserId, jwtToken);
 
         return {
             status: 'success',
@@ -48,11 +51,13 @@ export class WalletController {
         @Body() walletPayloadData: UpdateWalletDto,
     ) {
         const authenticatedUserId = incomingHttpRequest['authenticatedUser'].id;
+        const jwtToken = incomingHttpRequest['jwtToken'];
 
         const modifiedWalletData = await this.walletManagementService.modifyWalletName(
             authenticatedUserId,
             targetWalletId,
-            walletPayloadData.name.trim()
+            walletPayloadData.name.trim(),
+            jwtToken
         );
 
         return {
@@ -68,10 +73,12 @@ export class WalletController {
         @Param('id') targetWalletId: string,
     ) {
         const authenticatedUserId = incomingHttpRequest['authenticatedUser'].id;
+        const jwtToken = incomingHttpRequest['jwtToken'];
 
         const outputDeletionData = await this.walletManagementService.removeWalletRecord(
             authenticatedUserId,
-            targetWalletId
+            targetWalletId,
+            jwtToken
         );
 
         return {

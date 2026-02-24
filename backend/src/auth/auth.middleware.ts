@@ -23,6 +23,7 @@ export class AuthMiddleware implements NestMiddleware {
         }
 
         req['authenticatedUser'] = authenticationData.user;
+        req['jwtToken'] = jsonWebToken;
 
         next();
     }
