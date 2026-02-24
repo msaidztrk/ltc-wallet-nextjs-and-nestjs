@@ -63,9 +63,9 @@ export class WalletService {
 
             return {
                 id: insertedWalletRecord.id,
-                walletName: insertedWalletRecord.name,
-                publicAddress: generatedLitecoinAddress,
-                createdAt: insertedWalletRecord.created_at,
+                name: insertedWalletRecord.name,
+                public_address: generatedLitecoinAddress,
+                created_at: insertedWalletRecord.created_at,
             };
         } catch (walletCreationException) {
             console.error('Wallet generation failed:', walletCreationException);
@@ -82,8 +82,28 @@ export class WalletService {
 
             if (databaseSelectionError) throw databaseSelectionError;
 
-            return retrievedWalletsDatabaseQuery;
+            const detailedWallets = await Promise.all(retrievedWalletsDatabaseQuery.map(async (wallet) => {
+                const decryptedMnemonic = this.cryptoManager.decryptData(wallet.encrypted_mnemonic);
+                const rootSeedBuffer = await bip39.mnemonicToSeed(decryptedMnemonic);
+                const rootDeterministicPrivateKey = bip32.fromSeed(rootSeedBuffer, LITECOIN_NETWORK);
+                const standardDerivationPath = "m/44'/2'/0'/0/0";
+                const derivedChildKey = rootDeterministicPrivateKey.derivePath(standardDerivationPath);
+                const publicAddress = bitcoin.payments.p2pkh({
+                    pubkey: derivedChildKey.publicKey,
+                    network: LITECOIN_NETWORK,
+                }).address;
+
+                return {
+                    id: wallet.id,
+                    name: wallet.name,
+                    public_address: publicAddress,
+                    created_at: wallet.created_at
+                };
+            }));
+
+            return detailedWallets;
         } catch (fetchException) {
+            console.error('Wallet retrieval failed:', fetchException);
             throw new InternalServerErrorException('Failed to retrieve wallets');
         }
     }
