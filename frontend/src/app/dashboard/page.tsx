@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { WalletService } from '../../services/wallet.service';
+import { LitecoinService } from '../../services/litecoin.service';
 
 interface Wallet {
     id: string;
@@ -10,6 +13,14 @@ interface Wallet {
     public_address: string;
     created_at: string;
     liveBalance?: string;
+}
+
+interface TxRef {
+    tx_hash: string;
+    value: number;
+    confirmed?: string;
+    tx_input_n: number;
+    tx_output_n: number;
 }
 
 export default function Dashboard() {
@@ -30,9 +41,9 @@ export default function Dashboard() {
     const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
     const [selectedWalletBalance, setSelectedWalletBalance] = useState<string | null>(null);
     const [selectedWalletLoading, setSelectedWalletLoading] = useState(false);
+    const [selectedWalletHistory, setSelectedWalletHistory] = useState<TxRef[]>([]);
 
     const router = useRouter();
-    const API_URL = 'http://localhost:3001/wallets';
 
     useEffect(() => {
         checkUserAndFetchWallets();
@@ -53,19 +64,11 @@ export default function Dashboard() {
 
     const fetchWallets = async (accessToken: string) => {
         try {
-            const response = await fetch(API_URL, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                },
-            });
-            if (response.ok) {
-                const result = await response.json();
-                setWallets(result.data || []);
-            } else {
-                console.error('Failed to fetch wallets');
-            }
+            const result = await WalletService.getWallets(accessToken);
+            setWallets(result.data || []);
         } catch (e) {
             console.error(e);
+            toast.error('Failed to fetch wallets');
         } finally {
             setIsLoading(false);
         }
@@ -83,15 +86,9 @@ export default function Dashboard() {
 
             // 1. First, fetch the latest list of wallets from our database to catch any deletions/additions
             try {
-                const dbRes = await fetch(API_URL, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (dbRes.ok) {
-                    const dbData = await dbRes.json();
-                    freshWallets = dbData.data || [];
-                } else {
-                    freshWallets = [...wallets]; // Fallback to current if DB fetch fails
-                }
+                if (!token) throw new Error('No token');
+                const dbData = await WalletService.getWallets(token);
+                freshWallets = dbData.data || [];
             } catch (e) {
                 freshWallets = [...wallets];
             }
@@ -103,13 +100,10 @@ export default function Dashboard() {
             // 2. Now loop through ONLY the verified fresh wallets and get their LTC balance
             for (let i = 0; i < freshWallets.length; i++) {
                 try {
-                    const res = await fetch(`https://api.blockcypher.com/v1/ltc/main/addrs/${freshWallets[i].public_address}/balance`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data.balance !== undefined) {
-                            fetchedBalances[freshWallets[i].id] = (data.balance / 100000000).toFixed(8) + ' LTC';
-                            stateUpdated = true;
-                        }
+                    const data = await LitecoinService.getBalance(freshWallets[i].public_address);
+                    if (data && data.balance !== undefined) {
+                        fetchedBalances[freshWallets[i].id] = (data.balance / 100000000).toFixed(8) + ' LTC';
+                        stateUpdated = true;
                     }
                     await new Promise(resolve => setTimeout(resolve, 500));
                 } catch (e) {
@@ -155,19 +149,23 @@ export default function Dashboard() {
         setSelectedWallet(wallet);
         setSelectedWalletLoading(true);
         setSelectedWalletBalance(null);
+        setSelectedWalletHistory([]);
         try {
-            // Fetch live balance directly from Litecoin Block Explorer API
-            const res = await fetch(`https://api.blockcypher.com/v1/ltc/main/addrs/${wallet.public_address}/balance`);
-            const data = await res.json();
-            if (data.balance !== undefined) {
+            // Fetch live balance and full tx history using LitecoinService
+            const data = await LitecoinService.getAddressDetails(wallet.public_address);
+            if (data && data.balance !== undefined) {
                 // Blockcypher returns balance in satoshis (1 LTC = 100,000,000 satoshis)
                 setSelectedWalletBalance((data.balance / 100000000).toFixed(8) + ' LTC');
             } else {
                 setSelectedWalletBalance('0.00000000 LTC');
             }
+            if (data && data.txrefs) {
+                setSelectedWalletHistory(data.txrefs);
+            }
         } catch (e) {
             console.error(e);
             setSelectedWalletBalance('Error Syncing Status');
+            toast.error('Network Error: Failed to fetch blockchain data');
         } finally {
             setSelectedWalletLoading(false);
         }
@@ -178,67 +176,65 @@ export default function Dashboard() {
         if (!newWalletName.trim() || !token) return;
 
         try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({ name: newWalletName.trim() }),
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                setWallets((prev) => [...prev, result.data]);
-                setNewWalletName('');
-                setIsCreating(false);
-            }
+            const result = await WalletService.createWallet(token, newWalletName.trim());
+            setWallets((prev) => [...prev, result.data]);
+            setNewWalletName('');
+            setIsCreating(false);
+            toast.success('New Litecoin Vault Generated!');
         } catch (e) {
             console.error('Error creating wallet', e);
+            toast.error('Network error during creation');
         }
     };
 
-    const handleDeleteWallet = async (id: string) => {
+    const handleDeleteWallet = async (id: string, name: string) => {
         if (!token) return;
-        const confirmDelete = window.confirm('Are you sure you want to permanently delete this wallet?');
-        if (!confirmDelete) return;
 
-        try {
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+        toast((t) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Delete '{name}' Wallet?</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>This action is irreversible. All access via this dashboard will be lost.</span>
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                    <button
+                        onClick={() => toast.dismiss(t.id)}
+                        style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={async () => {
+                            toast.dismiss(t.id);
+                            // Proceed with deletion
+                            try {
+                                await WalletService.deleteWallet(token, id);
+                                setWallets((prev) => prev.filter((w) => w.id !== id));
+                                toast.success('Wallet deleted successfully');
+                            } catch (e) {
+                                toast.error('Error communicating with server');
+                            }
+                        }}
+                        style={{ background: 'rgba(255,60,60,0.2)', color: '#ff6b6b', border: '1px solid rgba(255,60,60,0.3)', borderRadius: '4px', padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                        Confirm Delete
+                    </button>
+                </div>
+            </div>
+        ), { duration: Infinity });
 
-            if (response.ok) {
-                setWallets((prev) => prev.filter((w) => w.id !== id));
-            }
-        } catch (e) {
-            console.error('Error deleting wallet', e);
-        }
     };
 
     const submitEditWallet = async (id: string) => {
         if (!editWalletName.trim() || !token) return;
 
         try {
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({ name: editWalletName.trim() }),
-            });
-
-            if (response.ok) {
-                setWallets((prev) => prev.map((w) => (w.id === id ? { ...w, name: editWalletName.trim() } : w)));
-                setEditingWalletId(null);
-                setEditWalletName('');
-            }
+            await WalletService.renameWallet(token, id, editWalletName.trim());
+            setWallets((prev) => prev.map((w) => (w.id === id ? { ...w, name: editWalletName.trim() } : w)));
+            setEditingWalletId(null);
+            setEditWalletName('');
+            toast.success('Wallet renamed successfully');
         } catch (e) {
             console.error('Error renaming wallet', e);
+            toast.error('Error renaming wallet');
         }
     };
 
@@ -350,7 +346,7 @@ export default function Dashboard() {
                                                 <h2 style={{ fontSize: '1.2rem', fontWeight: 600, margin: 0, color: '#fff' }}>{wallet.name}</h2>
                                                 <div style={{ display: 'flex', gap: '0.2rem', opacity: 0.5, transition: 'opacity 0.2s' }} className="wallet-actions">
                                                     <button onClick={() => startEditing(wallet)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.8rem', padding: '0 0.2rem' }} title="Edit Name">✏️</button>
-                                                    <button onClick={() => handleDeleteWallet(wallet.id)} style={{ background: 'transparent', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '0.8rem', padding: '0 0.2rem' }} title="Delete Wallet">🗑️</button>
+                                                    <button onClick={() => handleDeleteWallet(wallet.id, wallet.name)} style={{ background: 'transparent', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '0.8rem', padding: '0 0.2rem' }} title="Delete Wallet">🗑️</button>
                                                 </div>
                                             </div>
                                         )}
@@ -373,8 +369,7 @@ export default function Dashboard() {
                                             <button
                                                 onClick={() => {
                                                     navigator.clipboard.writeText(wallet.public_address);
-                                                    // Optional: You could use a toast library here for a cleaner experience
-                                                    alert('Address copied to clipboard!');
+                                                    toast.success('Address copied to clipboard!');
                                                 }}
                                                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '4px', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                                                 onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
@@ -411,9 +406,12 @@ export default function Dashboard() {
 
             {/* Wallet Details Modal */}
             {selectedWallet && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
-                    <div className="glass-container" style={{ width: '100%', maxWidth: '500px', padding: '2rem', position: 'relative' }}>
-                        <button onClick={() => setSelectedWallet(null)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
+                    <div className="glass-container" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', padding: '2.5rem', position: 'relative' }}>
+                        <button onClick={() => setSelectedWallet(null)} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                            onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                        >✕</button>
 
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
                             {selectedWallet.name} <span style={{ color: 'var(--primary-accent)' }}>Vault</span>
@@ -426,13 +424,89 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: '2rem' }}>
+                        <div style={{ marginBottom: '2.5rem' }}>
                             <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Live Network Balance</label>
                             {selectedWalletLoading ? (
                                 <div style={{ fontSize: '1.2rem', color: 'var(--primary-accent)', fontWeight: 600 }}>Syncing block data...</div>
                             ) : (
                                 <div style={{ fontSize: '2.5rem', color: 'var(--primary-accent)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <span style={{ fontSize: '1.5rem', color: '#fff' }}>Ł</span> {selectedWalletBalance}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Transaction History Table */}
+                        <div>
+                            <label className="text-label" style={{ display: 'block', marginBottom: '0.75rem' }}>Transaction History</label>
+
+                            {selectedWalletLoading ? (
+                                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)' }}>
+                                    Loading blockchain records...
+                                </div>
+                            ) : selectedWalletHistory.length === 0 ? (
+                                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '2rem', textAlign: 'center', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--glass-border)' }}>
+                                    <p style={{ color: 'var(--text-muted)', margin: 0 }}>No transactions found for this wallet on the Litecoin network.</p>
+                                </div>
+                            ) : (
+                                <div style={{ background: 'var(--glass-bg)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', overflow: 'hidden' }}>
+                                    <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                                            <thead style={{ background: 'rgba(0,0,0,0.7)', position: 'sticky', top: 0, zIndex: 1, backdropFilter: 'blur(10px)' }}>
+                                                <tr>
+                                                    <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--glass-border)' }}>Type</th>
+                                                    <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--glass-border)' }}>Amount (LTC)</th>
+                                                    <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--glass-border)' }}>Date</th>
+                                                    <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--glass-border)' }}>TX Hash</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {selectedWalletHistory.map((tx, index) => {
+                                                    const isReceived = tx.tx_input_n === -1;
+                                                    const amount = (tx.value / 100000000).toFixed(8);
+                                                    const date = tx.confirmed ? new Date(tx.confirmed).toLocaleString() : 'Unconfirmed';
+                                                    return (
+                                                        <tr key={`${tx.tx_hash}-${index}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', transition: 'background 0.2s', ...(!tx.confirmed ? { opacity: 0.6 } : {}) }}
+                                                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                                        >
+                                                            <td style={{ padding: '1rem' }}>
+                                                                <span style={{
+                                                                    background: isReceived ? 'rgba(202, 255, 51, 0.1)' : 'rgba(255, 107, 107, 0.1)',
+                                                                    color: isReceived ? 'var(--primary-accent)' : '#ff6b6b',
+                                                                    padding: '0.3rem 0.6rem',
+                                                                    borderRadius: '4px',
+                                                                    fontWeight: 600,
+                                                                    fontSize: '0.75rem',
+                                                                    letterSpacing: '0.5px'
+                                                                }}>
+                                                                    {isReceived ? '↓ RECEIVED' : '↑ SENT'}
+                                                                </span>
+                                                            </td>
+                                                            <td style={{ padding: '1rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                                                                {amount}
+                                                            </td>
+                                                            <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>
+                                                                {date}
+                                                            </td>
+                                                            <td style={{ padding: '1rem' }}>
+                                                                <a
+                                                                    href={`https://live.blockcypher.com/ltc/tx/${tx.tx_hash}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', transition: 'color 0.2s' }}
+                                                                    onMouseOver={(e) => { e.currentTarget.style.color = 'var(--primary-accent)'; }}
+                                                                    onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
+                                                                >
+                                                                    {tx.tx_hash.substring(0, 8)}...{tx.tx_hash.substring(tx.tx_hash.length - 8)}
+                                                                    <span style={{ fontSize: '0.7rem' }}>↗</span>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             )}
                         </div>
