@@ -1,33 +1,23 @@
-import axios from 'axios';
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { apiClient } from '../lib/apiClient';
 
 export class WalletService {
     static async getWallets(token: string) {
-        const response = await axios.get(`${BACKEND_URL}/wallets`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        return response.data;
+        return apiClient.get('/wallets', { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
     }
 
     static async createWallet(token: string, name: string) {
-        const response = await axios.post(`${BACKEND_URL}/wallets`, { name }, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        return response.data;
+        return apiClient.post('/wallets', { name }, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
     }
 
     static async deleteWallet(token: string, id: string) {
-        const response = await axios.delete(`${BACKEND_URL}/wallets/${id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        return response.data;
+        return apiClient.delete(`/wallets/${id}`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
     }
 
     static async renameWallet(token: string, id: string, name: string) {
-        const response = await axios.patch(`${BACKEND_URL}/wallets/${id}`, { name }, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        return response.data;
+        return apiClient.patch(`/wallets/${id}`, { name }, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
+    }
+
+    static async sendLTC(token: string, id: string, toAddress: string, amount: number) {
+        return apiClient.post(`/wallets/${id}/send`, { toAddress, amount }, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
     }
 }
