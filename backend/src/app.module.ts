@@ -11,6 +11,7 @@ import { AuthMiddleware } from './auth/auth.middleware';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '../.env',
     }),
     SupabaseModule,
     WalletModule,
