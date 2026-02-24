@@ -1,65 +1,154 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { useRouter } from 'next/navigation';
+
+export default function AuthPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorStatus, setErrorStatus] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Check if the user is already logged in (Persistent Session)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.push('/dashboard');
+      }
+    });
+  }, [router]);
+
+  const validateInputs = () => {
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      setErrorStatus('Please enter a valid email address.');
+      return false;
+    }
+    if (!password || password.length < 6) {
+      setErrorStatus('Password must be at least 6 characters long.');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorStatus(null);
+
+    if (!validateInputs()) {
+      setIsLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorStatus(error.message);
+    } else {
+      router.push('/dashboard');
+    }
+
+    setIsLoading(false);
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorStatus(null);
+
+    if (!validateInputs()) {
+      setIsLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorStatus(error.message);
+    } else {
+      setErrorStatus("Success! Check your email to verify your account.");
+    }
+
+    setIsLoading(false);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100%', padding: '1rem' }}>
+      <div className="glass-container" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem 2rem' }}>
+
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 700, margin: '0 0 0.5rem 0', letterSpacing: '-0.5px' }}>
+            Vault<span style={{ color: 'var(--primary-accent)' }}>X</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
+            Secure Litecoin Cold Storage
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <form style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div>
+            <label className="text-label" htmlFor="email">Email Address</label>
+            <input
+              id="email"
+              type="email"
+              className="input-premium"
+              placeholder="operator@vaultx.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          </div>
+
+          <div>
+            <label className="text-label" htmlFor="password">Master Password</label>
+            <input
+              id="password"
+              type="password"
+              className="input-premium"
+              placeholder="••••••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          {errorStatus && (
+            <div style={{ padding: '0.75rem', borderRadius: '4px', background: 'rgba(255, 60, 60, 0.1)', border: '1px solid rgba(255, 60, 60, 0.2)', color: '#ff6b6b', fontSize: '0.85rem', textAlign: 'center' }}>
+              {errorStatus}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <button
+              type="button"
+              onClick={handleSignIn}
+              className="btn-primary"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Authorizing...' : 'Enter Vault'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSignUp}
+              style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}
+              className="btn-primary"
+              disabled={isLoading}
+            >
+              Initialize New Identity
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </main>
   );
 }
