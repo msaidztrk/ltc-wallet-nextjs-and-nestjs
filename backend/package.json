@@ -27,10 +27,12 @@
     "@supabase/supabase-js": "^2.97.0",
     "@types/bip39": "^2.4.2",
     "@types/uuid": "^10.0.0",
+    "bip32": "^5.0.1",
     "bip39": "^3.1.0",
     "bitcoinjs-lib": "^7.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "tiny-secp256k1": "^2.2.4",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
