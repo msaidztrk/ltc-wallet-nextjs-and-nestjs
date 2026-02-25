@@ -84,6 +84,7 @@ CREATE POLICY "System can insert transaction logs" ON public.transaction_logs FO
 
 -- Policies for error_logs
 CREATE POLICY "Users can view their own error logs" ON public.error_logs FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own error logs" ON public.error_logs FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.uid() IS NULL);
 
 -- Policies for user_settings
 CREATE POLICY "Users can view their own settings" ON public.user_settings FOR SELECT USING (auth.uid() = user_id);
