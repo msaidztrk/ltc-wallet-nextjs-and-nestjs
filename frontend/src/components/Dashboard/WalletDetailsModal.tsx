@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import toast from 'react-hot-toast';
 import { Wallet, TxRef } from '../../types/wallet.types';
+import { useFeeCalculator } from '../../hooks/useFeeCalculator';
 
 interface WalletDetailsModalProps {
     wallet: Wallet;
@@ -18,6 +18,15 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
     const [sendAmount, setSendAmount] = useState('');
     const [sendUsdAmount, setSendUsdAmount] = useState('');
     const [isSending, setIsSending] = useState(false);
+
+    const {
+        estimatedFee,
+        isEstimatingFee,
+        isCalculating,
+        remainingLtcNum,
+        sendAmountNum,
+        isInsufficientFunds
+    } = useFeeCalculator(wallet.public_address, sendAmount, balance);
 
     const handleLtcChange = (val: string) => {
         setSendAmount(val);
@@ -222,8 +231,29 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                                 />
                             </div>
                         </div>
-                        <button type="submit" className="btn-primary" style={{ width: '100%', opacity: isSending ? 0.7 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }} disabled={isSending}>
-                            {isSending ? 'Broadcasting Transaction...' : 'Confirm Send Transaction'}
+                        {isCalculating && (
+                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '4px', border: isInsufficientFunds ? '1px solid rgba(255, 107, 107, 0.5)' : '1px solid var(--glass-border)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
+                                    <span>Network Fee (Estimated):</span>
+                                    <span>{isEstimatingFee ? 'Calculating...' : estimatedFee !== null ? `${estimatedFee.toFixed(8)} LTC` : 'N/A'}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
+                                    <span>Total Deduction:</span>
+                                    <span>{isEstimatingFee ? 'Calculating...' : estimatedFee !== null ? `${(sendAmountNum + estimatedFee).toFixed(8)} LTC` : 'N/A'}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', color: isInsufficientFunds ? '#ff6b6b' : '#fff', fontWeight: 600 }}>
+                                    <span>Remaining Balance:</span>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div>{isEstimatingFee ? 'Calculating...' : isInsufficientFunds ? 'Insufficient Funds' : `${remainingLtcNum.toFixed(8)} LTC`}</div>
+                                        {!isInsufficientFunds && !isEstimatingFee && usdRate && (
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--primary-accent)', marginTop: '0.2rem', opacity: 0.8 }}>≈ ${(remainingLtcNum * usdRate).toFixed(2)} USD</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        <button type="submit" className="btn-primary" style={{ width: '100%', opacity: isSending || isEstimatingFee || isInsufficientFunds ? 0.7 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }} disabled={isSending || isEstimatingFee || isInsufficientFunds || !sendAddress || !sendAmount}>
+                            {isSending ? 'Broadcasting Transaction...' : isEstimatingFee ? 'Estimating Fee...' : isInsufficientFunds ? 'Insufficient LTC Balance' : 'Confirm Send Transaction'}
                         </button>
                     </form>
                 )}
