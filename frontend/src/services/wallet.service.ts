@@ -20,4 +20,8 @@ export class WalletService {
     static async sendLTC(token: string, id: string, toAddress: string, amount: number) {
         return apiClient.post(`/wallets/${id}/send`, { toAddress, amount }, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
     }
+
+    static async getActivityHistory(token: string) {
+        return apiClient.get('/wallets/history', { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
+    }
 }

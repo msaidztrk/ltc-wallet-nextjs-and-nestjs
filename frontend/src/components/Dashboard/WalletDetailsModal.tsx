@@ -19,6 +19,8 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
     const [sendUsdAmount, setSendUsdAmount] = useState('');
     const [isSending, setIsSending] = useState(false);
 
+
+
     const {
         estimatedFee,
         isEstimatingFee,
@@ -46,10 +48,15 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
         }
     };
 
+
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!sendAddress || !sendAmount) return;
+        if (!sendAddress || !sendAmount || isInsufficientFunds) return;
+        await executeSendTransaction();
+    };
 
+    const executeSendTransaction = async () => {
         setIsSending(true);
         const success = await onSendLTC(sendAddress, sendAmount);
         if (success) {
@@ -257,6 +264,8 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                         </button>
                     </form>
                 )}
+
+
             </div>
         </div>
     );

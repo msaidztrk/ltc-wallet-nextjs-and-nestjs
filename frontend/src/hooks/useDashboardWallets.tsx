@@ -16,6 +16,7 @@ export function useDashboardWallets() {
     const [selectedWalletBalance, setSelectedWalletBalance] = useState<string | null>(null);
     const [selectedWalletLoading, setSelectedWalletLoading] = useState(false);
     const [selectedWalletHistory, setSelectedWalletHistory] = useState<TxRef[]>([]);
+    const [activityHistory, setActivityHistory] = useState<any[]>([]);
 
     const [ltcUsdRate, setLtcUsdRate] = useState<number | null>(null);
 
@@ -42,7 +43,17 @@ export function useDashboardWallets() {
         }
 
         setToken(session.access_token);
-        await fetchWallets(session.access_token);
+        await Promise.all([
+            fetchWallets(session.access_token),
+            fetchActivityHistory(session.access_token)
+        ]);
+    };
+
+    const fetchActivityHistory = async (accessToken: string) => {
+        const result = await WalletService.getActivityHistory(accessToken);
+        if (result && result.data) {
+            setActivityHistory(result.data);
+        }
     };
 
     const fetchWallets = async (accessToken: string) => {
@@ -138,6 +149,7 @@ export function useDashboardWallets() {
         if (result) {
             toast.success(`Successfully sent ${amount} LTC!`);
             openWalletDetails(selectedWallet);
+            fetchActivityHistory(token); // Refresh activity after send
             return true;
         }
         return false;
@@ -216,6 +228,8 @@ export function useDashboardWallets() {
         handleCreateWallet,
         handleDeleteWallet,
         submitEditWallet,
-        handleLogout
+        handleLogout,
+        activityHistory,
+        fetchActivityHistory: () => token && fetchActivityHistory(token)
     };
 }
