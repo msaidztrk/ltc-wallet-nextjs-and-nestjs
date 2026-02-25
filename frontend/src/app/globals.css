@@ -4,22 +4,36 @@
   /* Core Colors */
   --bg-dark: #0a0a0c;
   --bg-panel: rgba(22, 22, 26, 0.4);
-  --primary-accent: #00e676; /* Vivid Litecoin Green */
+  --primary-accent: #00e676;
+  /* Vivid Litecoin Green */
   --primary-glow: rgba(0, 230, 118, 0.6);
   --text-main: #f3f3f3;
   --text-muted: #888891;
-  
+
   /* Glassmorphism & Borders */
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-blur: 16px;
-  
+
   /* Utilities */
   --radius-lg: 18px;
   --radius-sm: 8px;
   --transition-smooth: 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-  
+
   /* Fonts */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.light {
+  --bg-dark: #f0f2f5;
+  --bg-panel: rgba(255, 255, 255, 0.7);
+  --primary-accent: #00b35c;
+  /* Slightly darker green for contrast on light */
+  --primary-glow: rgba(0, 179, 92, 0.4);
+  --text-main: #111827;
+  --text-muted: #6b7280;
+
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --glass-blur: 24px;
 }
 
 body {
@@ -32,9 +46,10 @@ body {
   flex-direction: column;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-image: 
+  background-image:
     radial-gradient(circle at 15% 50%, rgba(0, 230, 118, 0.04), transparent 25%),
     radial-gradient(circle at 85% 30%, rgba(0, 230, 118, 0.04), transparent 25%);
+  transition: background-color var(--transition-smooth), color var(--transition-smooth);
 }
 
 * {
@@ -48,7 +63,9 @@ body {
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  /* Softened shadow globally, dark mode relies on the dark bg to hide softness anyway */
+  transition: background var(--transition-smooth), border var(--transition-smooth), box-shadow var(--transition-smooth);
 }
 
 /* Premium Button Component */
@@ -75,13 +92,14 @@ body {
 
 /* Premium Minimal Input Component */
 .input-premium {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--bg-dark);
+  /* Dynamically colored input bg */
   border: 1px solid var(--glass-border);
   color: var(--text-main);
   padding: 0.8rem 1rem;
   border-radius: var(--radius-sm);
   outline: none;
-  transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+  transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth), background-color var(--transition-smooth), color var(--transition-smooth);
   width: 100%;
 }
 
@@ -108,13 +126,16 @@ body {
 ::-webkit-scrollbar {
   width: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--bg-dark);
 }
+
 ::-webkit-scrollbar-thumb {
   background: #2a2a30;
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }

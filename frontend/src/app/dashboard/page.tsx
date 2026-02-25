@@ -2,9 +2,9 @@
 
 import { useDashboardWallets } from '../../hooks/useDashboardWallets';
 import { WalletDetailsModal } from '../../components/Dashboard/WalletDetailsModal';
-import { DashboardHeader } from '../../components/Dashboard/DashboardHeader';
 import { CreateWalletForm } from '../../components/Dashboard/CreateWalletForm';
 import { WalletCard } from '../../components/Dashboard/WalletCard';
+import { DashboardLayout } from '../../components/Dashboard/DashboardLayout';
 
 export default function Dashboard() {
     const {
@@ -22,24 +22,28 @@ export default function Dashboard() {
         handleCreateWallet,
         handleDeleteWallet,
         submitEditWallet,
-        handleLogout
     } = useDashboardWallets();
 
     if (isLoading) {
         return (
-            <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <p style={{ color: 'var(--text-muted)' }}>Decrypting Vault Data...</p>
-            </main>
+            <DashboardLayout>
+                <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <p style={{ color: 'var(--text-muted)' }}>Decrypting Vault Data...</p>
+                </div>
+            </DashboardLayout>
         );
     }
 
     return (
-        <main style={{ minHeight: '100vh', padding: '2rem 1rem' }}>
+        <DashboardLayout>
             <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
 
-                <DashboardHeader onLogout={handleLogout} />
+                <div style={{ marginBottom: '3rem' }}>
+                    <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 0.5rem 0' }}>My <span style={{ color: 'var(--primary-accent)' }}>Vaults</span></h2>
+                    <p style={{ color: 'var(--text-muted)' }}>Securely manage your Litecoin assets across multiple addresses.</p>
+                </div>
 
-                <div style={{ marginBottom: '2rem' }}>
+                <div style={{ marginBottom: '2.5rem' }}>
                     <CreateWalletForm onCreate={handleCreateWallet} />
                 </div>
 
@@ -87,6 +91,6 @@ export default function Dashboard() {
                     usdRate={ltcUsdRate}
                 />
             )}
-        </main>
+        </DashboardLayout>
     );
 }
