@@ -3,6 +3,7 @@ import { WalletService } from './wallet.service';
 import type { Request } from 'express';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
+import { SendLtcDto } from './dto/send-ltc.dto';
 
 @Controller('wallets')
 export class WalletController {
@@ -85,5 +86,26 @@ export class WalletController {
             status: 'success',
             data: outputDeletionData,
         };
+    }
+
+    @Post(':id/send')
+    @HttpCode(HttpStatus.OK)
+    async executeLtcTransaction(
+        @Req() incomingHttpRequest: Request,
+        @Param('id') sourceWalletId: string,
+        @Body() transactionPayload: SendLtcDto,
+    ) {
+        const authenticatedUserId = incomingHttpRequest['authenticatedUser'].id;
+        const jwtToken = incomingHttpRequest['jwtToken'];
+
+        const transactionReceipt = await this.walletManagementService.sendLitecoinTransaction(
+            authenticatedUserId,
+            sourceWalletId,
+            transactionPayload.toAddress.trim(),
+            transactionPayload.amount,
+            jwtToken
+        );
+
+        return transactionReceipt;
     }
 }

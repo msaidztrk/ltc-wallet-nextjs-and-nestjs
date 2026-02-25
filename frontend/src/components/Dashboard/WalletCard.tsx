@@ -85,7 +85,7 @@ export function WalletCard({ wallet, usdRate, onEditSubmit, onDelete, onOpenDeta
                 </div>
             </div>
 
-            {/* Right side: Actions & Date */}
+            {/* Right side: Actions */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.6rem', flex: '0.7' }}>
                 <button
                     onClick={() => onOpenDetails(wallet)}
@@ -96,9 +96,6 @@ export function WalletCard({ wallet, usdRate, onEditSubmit, onDelete, onOpenDeta
                 >
                     ⚙️ Actions
                 </button>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    Created: {new Date(wallet.created_at).toLocaleDateString()}
-                </div>
             </div>
 
         </div>

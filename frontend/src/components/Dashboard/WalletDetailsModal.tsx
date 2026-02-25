@@ -16,7 +16,26 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
     const [activeTab, setActiveTab] = useState<'history' | 'send'>('history');
     const [sendAddress, setSendAddress] = useState('');
     const [sendAmount, setSendAmount] = useState('');
+    const [sendUsdAmount, setSendUsdAmount] = useState('');
     const [isSending, setIsSending] = useState(false);
+
+    const handleLtcChange = (val: string) => {
+        setSendAmount(val);
+        if (usdRate && val !== '') {
+            setSendUsdAmount((parseFloat(val) * usdRate).toFixed(2));
+        } else {
+            setSendUsdAmount('');
+        }
+    };
+
+    const handleUsdChange = (val: string) => {
+        setSendUsdAmount(val);
+        if (usdRate && val !== '') {
+            setSendAmount((parseFloat(val) / usdRate).toFixed(8));
+        } else {
+            setSendAmount('');
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,6 +46,7 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
         if (success) {
             setSendAddress('');
             setSendAmount('');
+            setSendUsdAmount('');
             setActiveTab('history');
         }
         setIsSending(false);
@@ -170,19 +190,37 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                                 style={{ width: '100%' }}
                             />
                         </div>
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Amount to Send (LTC)</label>
-                            <input
-                                type="number"
-                                step="0.00000001"
-                                min="0"
-                                className="input-premium"
-                                value={sendAmount}
-                                onChange={(e) => setSendAmount(e.target.value)}
-                                placeholder="0.00"
-                                required
-                                style={{ width: '100%' }}
-                            />
+                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+                            <div style={{ flex: 1 }}>
+                                <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Amount (LTC)</label>
+                                <input
+                                    type="number"
+                                    step="0.00000001"
+                                    min="0"
+                                    className="input-premium"
+                                    value={sendAmount}
+                                    onChange={(e) => handleLtcChange(e.target.value)}
+                                    placeholder="0.00"
+                                    required
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', paddingTop: '1.5rem', color: 'var(--text-muted)' }}>
+                                ⇌
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Expected (USD)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    className="input-premium"
+                                    value={sendUsdAmount}
+                                    onChange={(e) => handleUsdChange(e.target.value)}
+                                    placeholder="0.00"
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
                         </div>
                         <button type="submit" className="btn-primary" style={{ width: '100%', opacity: isSending ? 0.7 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }} disabled={isSending}>
                             {isSending ? 'Broadcasting Transaction...' : 'Confirm Send Transaction'}
