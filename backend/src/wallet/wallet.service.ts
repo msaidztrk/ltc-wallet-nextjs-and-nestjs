@@ -8,6 +8,9 @@ import { WalletRepository } from './wallet.repository';
 import { ECPairFactory } from 'ecpair';
 import axios from 'axios';
 import { LITECOIN_NETWORK, BLOCKCYPHER_BASE_URL } from '../common/constants';
+import { LoggerService } from '../common/logger.service';
+import { CurrencyUtils } from '../common/utils/currency.utils';
+import { WalletTransactionService } from './wallet-transaction.service';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -18,6 +21,8 @@ export class WalletService {
     constructor(
         private readonly cryptoManager: CryptoService,
         private readonly walletRepository: WalletRepository,
+        private readonly loggerService: LoggerService,
+        private readonly txService: WalletTransactionService,
     ) { }
 
     private async getWalletKeysAndAddress(mnemonic: string) {
@@ -39,71 +44,6 @@ export class WalletService {
             keyPair,
             publicAddress: p2pkhPayment.address as string,
         };
-    }
-
-    private async fetchActiveUTXOs(address: string) {
-        const blockcypherResponse = await axios.get(`${BLOCKCYPHER_BASE_URL}/addrs/${address}?unspentOnly=true`);
-        const utxos = blockcypherResponse.data.txrefs || [];
-
-        if (utxos.length === 0) {
-            throw new Error('Insufficient balance. No confirmed UTXOs found on the network.');
-        }
-
-        return utxos;
-    }
-
-    private async createSignedTransactionHex(utxos: any[], amountToSendSats: number, toAddress: string, myAddress: string, keyPair: any) {
-        const psbt = new bitcoin.Psbt({ network: LITECOIN_NETWORK });
-        let totalAvailableSats = 0;
-        let dynamicFeeSats = 2000;
-        const feeRatePerByte = 10;
-        const baseOutputBytes = (2 * 34) + 10;
-        let inputsUsedCount = 0;
-
-        for (const utxo of utxos) {
-            const rawTxResponse = await axios.get(`${BLOCKCYPHER_BASE_URL}/txs/${utxo.tx_hash}?includeHex=true`);
-
-            psbt.addInput({
-                hash: utxo.tx_hash,
-                index: utxo.tx_output_n,
-                nonWitnessUtxo: Buffer.from(rawTxResponse.data.hex, 'hex'),
-            });
-
-            inputsUsedCount++;
-            dynamicFeeSats = (baseOutputBytes + (inputsUsedCount * 148)) * feeRatePerByte;
-            totalAvailableSats += utxo.value;
-
-            if (totalAvailableSats >= amountToSendSats + dynamicFeeSats) break;
-        }
-
-        if (totalAvailableSats < amountToSendSats + dynamicFeeSats) {
-            throw new Error(`Insufficient LTC. Available: ${(totalAvailableSats / 100000000).toFixed(8)} | Required: ${((amountToSendSats + dynamicFeeSats) / 100000000).toFixed(8)}`);
-        }
-
-        psbt.addOutput({
-            address: toAddress,
-            value: BigInt(amountToSendSats),
-        });
-
-        const changeSats = totalAvailableSats - amountToSendSats - dynamicFeeSats;
-        if (changeSats > 546) {
-            psbt.addOutput({
-                address: myAddress,
-                value: BigInt(changeSats),
-            });
-        }
-
-        psbt.signAllInputs(keyPair);
-        psbt.finalizeAllInputs();
-
-        return psbt.extractTransaction().toHex();
-    }
-
-    private async broadcastRawTransaction(rawTransactionHex: string) {
-        const pushResponse = await axios.post(`${BLOCKCYPHER_BASE_URL}/txs/push`, {
-            tx: rawTransactionHex
-        });
-        return pushResponse.data;
     }
 
     async createWalletRecord(authenticatedUserId: string, walletIdentifierName: string, jwtToken: string) {
@@ -177,18 +117,28 @@ export class WalletService {
             const decryptedMnemonic = this.cryptoManager.decryptData(walletData.encrypted_mnemonic);
             const { keyPair, publicAddress: myAddress } = await this.getWalletKeysAndAddress(decryptedMnemonic);
 
-            const amountToSendSats = Math.floor(amountToSend * 100000000);
+            const amountToSendSats = CurrencyUtils.ltcToSats(amountToSend);
 
-            const utxos = await this.fetchActiveUTXOs(myAddress);
+            const utxos = await this.txService.fetchActiveUTXOs(myAddress);
 
-            const rawTransactionHex = await this.createSignedTransactionHex(utxos, amountToSendSats, toAddress, myAddress, keyPair);
+            const rawTransactionHex = await this.txService.createSignedTransactionHex(utxos, amountToSendSats, toAddress, myAddress, keyPair);
 
-            const pushResponseData = await this.broadcastRawTransaction(rawTransactionHex);
+            const pushResponseData = await this.txService.broadcastRawTransaction(rawTransactionHex);
+            const txHash = pushResponseData.tx.hash;
+
+            await this.loggerService.logTransaction(
+                authenticatedUserId,
+                targetWalletId,
+                txHash,
+                amountToSend,
+                'send',
+                jwtToken
+            );
 
             return {
                 status: 'success',
                 data: {
-                    tx_hash: pushResponseData.tx.hash,
+                    tx_hash: txHash,
                     amount_sent: amountToSend,
                     to_address: toAddress
                 }
@@ -199,5 +149,14 @@ export class WalletService {
             const errorMessage = error?.response?.data?.error || error.message || 'Transaction broadcasting failed on the node';
             throw new InternalServerErrorException(errorMessage);
         }
+    }
+
+
+    async getTransactionHistory(authenticatedUserId: string, jwtToken: string) {
+        const { data, error } = await this.loggerService.getLogs(authenticatedUserId, jwtToken);
+        if (error) {
+            throw new InternalServerErrorException('Could not fetch transaction history');
+        }
+        return data;
     }
 }

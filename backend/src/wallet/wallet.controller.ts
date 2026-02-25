@@ -44,6 +44,20 @@ export class WalletController {
         };
     }
 
+    @Get('history')
+    @HttpCode(HttpStatus.OK)
+    async fetchTransactionHistory(@Req() incomingHttpRequest: Request) {
+        const authenticatedUserId = incomingHttpRequest['authenticatedUser'].id;
+        const jwtToken = incomingHttpRequest['jwtToken'];
+
+        const history = await this.walletManagementService.getTransactionHistory(authenticatedUserId, jwtToken);
+
+        return {
+            status: 'success',
+            data: history,
+        };
+    }
+
     @Patch(':id')
     @HttpCode(HttpStatus.OK)
     async renameWallet(
