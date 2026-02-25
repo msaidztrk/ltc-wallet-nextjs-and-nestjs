@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTheme } from '../../hooks/useTheme';
-import { supabase } from '../../lib/supabase';
+import { useTheme } from '../hooks/useTheme';
+import { supabase } from '../lib/supabase';
 import { useRouter } from 'next/navigation';
 
 // Clean Minimalist Icons
@@ -28,7 +28,7 @@ const Icons = {
     )
 };
 
-export function Sidebar() {
+export function AppSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { toggleTheme, isLightMode } = useTheme();

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '../../hooks/useTheme';
-import { DashboardLayout } from '../../components/Dashboard/DashboardLayout';
 
 export default function Settings() {
     const router = useRouter();
@@ -30,16 +29,16 @@ export default function Settings() {
 
     if (isLoading) {
         return (
-            <DashboardLayout>
+            <main>
                 <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <p style={{ color: 'var(--text-muted)' }}>Loading Settings...</p>
                 </div>
-            </DashboardLayout>
+            </main>
         );
     }
 
     return (
-        <DashboardLayout>
+        <main>
             <div style={{ maxWidth: '800px', margin: '0 auto' }}>
 
                 <div style={{ marginBottom: '3rem' }}>
@@ -84,6 +83,6 @@ export default function Settings() {
                 </div>
 
             </div>
-        </DashboardLayout>
+        </main>
     );
 }

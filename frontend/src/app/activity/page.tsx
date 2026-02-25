@@ -2,23 +2,22 @@
 
 import { useDashboardWallets } from '../../hooks/useDashboardWallets';
 import { TransactionActivity } from '../../components/Dashboard/TransactionActivity';
-import { DashboardLayout } from '../../components/Dashboard/DashboardLayout';
 
 export default function ActivityPage() {
     const { activityHistory, wallets, isLoading } = useDashboardWallets();
 
     if (isLoading) {
         return (
-            <DashboardLayout>
+            <main>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
                     <p style={{ color: 'var(--text-muted)' }}>Loading activity data...</p>
                 </div>
-            </DashboardLayout>
+            </main>
         );
     }
 
     return (
-        <DashboardLayout>
+        <main>
             <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
                 <div style={{ marginBottom: '3rem' }}>
                     <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 0.5rem 0' }}>Transaction <span style={{ color: 'var(--primary-accent)' }}>Logs</span></h2>
@@ -33,6 +32,6 @@ export default function ActivityPage() {
                     </div>
                 )}
             </div>
-        </DashboardLayout>
+        </main>
     );
 }

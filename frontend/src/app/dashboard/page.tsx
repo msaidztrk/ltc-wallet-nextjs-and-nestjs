@@ -4,7 +4,6 @@ import { useDashboardWallets } from '../../hooks/useDashboardWallets';
 import { WalletDetailsModal } from '../../components/Dashboard/WalletDetailsModal';
 import { CreateWalletForm } from '../../components/Dashboard/CreateWalletForm';
 import { WalletCard } from '../../components/Dashboard/WalletCard';
-import { DashboardLayout } from '../../components/Dashboard/DashboardLayout';
 
 export default function Dashboard() {
     const {
@@ -26,16 +25,16 @@ export default function Dashboard() {
 
     if (isLoading) {
         return (
-            <DashboardLayout>
+            <main>
                 <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <p style={{ color: 'var(--text-muted)' }}>Decrypting Vault Data...</p>
                 </div>
-            </DashboardLayout>
+            </main>
         );
     }
 
     return (
-        <DashboardLayout>
+        <main>
             <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
 
                 <div style={{ marginBottom: '3rem' }}>
@@ -91,6 +90,6 @@ export default function Dashboard() {
                     usdRate={ltcUsdRate}
                 />
             )}
-        </DashboardLayout>
+        </main>
     );
 }
