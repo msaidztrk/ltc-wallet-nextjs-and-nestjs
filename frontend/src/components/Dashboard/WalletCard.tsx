@@ -10,7 +10,10 @@ interface WalletCardProps {
     onOpenDetails: (wallet: Wallet) => void;
 }
 
+import { useTranslation } from '../../hooks/useTranslation';
+
 export function WalletCard({ wallet, usdRate, onEditSubmit, onDelete, onOpenDetails }: WalletCardProps) {
+    const { t } = useTranslation();
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState(wallet.name);
 
@@ -51,9 +54,9 @@ export function WalletCard({ wallet, usdRate, onEditSubmit, onDelete, onOpenDeta
                 )}
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Auto-Sync:</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('auto_sync')}</span>
                     <span style={{ fontSize: '1.05rem', color: 'var(--primary-accent)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
-                        {wallet.liveBalance ? wallet.liveBalance : 'Syncing...'}
+                        {wallet.liveBalance ? wallet.liveBalance : t('syncing')}
                     </span>
                     {wallet.liveBalance && usdRate && (
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
@@ -65,7 +68,7 @@ export function WalletCard({ wallet, usdRate, onEditSubmit, onDelete, onOpenDeta
 
             {/* Middle: Address */}
             <div style={{ flex: '1.5', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <span className="text-label" style={{ fontSize: '0.7rem' }}>LTC Address</span>
+                <span className="text-label" style={{ fontSize: '0.7rem' }}>{t('ltc_address')}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.3)', padding: '0.5rem 0.8rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)' }}>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
                         {wallet.public_address}
@@ -73,12 +76,12 @@ export function WalletCard({ wallet, usdRate, onEditSubmit, onDelete, onOpenDeta
                     <button
                         onClick={() => {
                             navigator.clipboard.writeText(wallet.public_address);
-                            toast.success('Address copied to clipboard!');
+                            toast.success(t('address_copied'));
                         }}
                         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '4px', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                         onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
                         onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                        title="Copy Address"
+                        title={t('copy_address')}
                     >
                         📋
                     </button>
@@ -92,9 +95,9 @@ export function WalletCard({ wallet, usdRate, onEditSubmit, onDelete, onOpenDeta
                     style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', padding: '0.5rem 1rem', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
                     onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-                    title="Vault Actions"
+                    title={t('vault_actions')}
                 >
-                    ⚙️ Actions
+                    {t('actions_btn')}
                 </button>
             </div>
 

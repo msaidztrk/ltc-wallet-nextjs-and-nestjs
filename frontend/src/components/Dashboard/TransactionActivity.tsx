@@ -16,11 +16,14 @@ interface TransactionActivityProps {
     wallets: Wallet[];
 }
 
+import { useTranslation } from '../../hooks/useTranslation';
+
 export function TransactionActivity({ logs, wallets }: TransactionActivityProps) {
+    const { t } = useTranslation();
 
     const getWalletName = (walletId: string) => {
         const wallet = wallets.find(w => w.id === walletId);
-        return wallet ? wallet.name : 'Unknown Vault';
+        return wallet ? wallet.name : t('unknown_vault');
     };
 
     if (!logs || logs.length === 0) {
@@ -30,18 +33,18 @@ export function TransactionActivity({ logs, wallets }: TransactionActivityProps)
     return (
         <div className="glass-container" style={{ padding: '1.5rem', marginTop: '2rem' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: 'var(--primary-accent)' }}>~</span> Recent Activity
+                <span style={{ color: 'var(--primary-accent)' }}>~</span> {t('recent_activity')}
             </h3>
 
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                     <thead>
                         <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)', textAlign: 'left' }}>
-                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Action</th>
-                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Wallet</th>
-                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Amount (LTC)</th>
-                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Status</th>
-                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Date</th>
+                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{t('table_action')}</th>
+                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{t('table_wallet')}</th>
+                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{t('table_amount')}</th>
+                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{t('table_status')}</th>
+                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{t('table_date')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -55,7 +58,9 @@ export function TransactionActivity({ logs, wallets }: TransactionActivityProps)
                                         background: log.type === 'send' ? '#ff6b6b' : 'var(--primary-accent)',
                                         display: 'inline-block'
                                     }}></span>
-                                    <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>{log.type}</span>
+                                    <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>
+                                        {log.type === 'send' ? t('action_send') : t('action_receive')}
+                                    </span>
                                 </td>
                                 <td style={{ padding: '1rem', color: 'var(--text-main)', fontWeight: 500 }}>
                                     {getWalletName(log.wallet_id)}

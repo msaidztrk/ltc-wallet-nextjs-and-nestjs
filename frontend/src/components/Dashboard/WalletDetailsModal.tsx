@@ -5,6 +5,7 @@ import { useSettings } from '../../hooks/useSettings';
 import { SettingsService } from '../../services/settings.service';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface WalletDetailsModalProps {
     wallet: Wallet;
@@ -27,6 +28,7 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
     const [isVerifying, setIsVerifying] = useState(false);
 
     const { settings } = useSettings();
+    const { t } = useTranslation();
 
 
 
@@ -118,16 +120,16 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                 </h2>
 
                 <div style={{ marginBottom: '1.5rem' }}>
-                    <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Public Address (LTC)</label>
+                    <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>{t('public_address')}</label>
                     <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '4px', wordBreak: 'break-all', fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: '#fff', border: '1px solid var(--glass-border)' }}>
                         {wallet.public_address}
                     </div>
                 </div>
 
                 <div style={{ marginBottom: '2.5rem' }}>
-                    <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Live Network Balance</label>
+                    <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>{t('live_network_balance')}</label>
                     {isLoading ? (
-                        <div style={{ fontSize: '1.2rem', color: 'var(--primary-accent)', fontWeight: 600 }}>Syncing block data...</div>
+                        <div style={{ fontSize: '1.2rem', color: 'var(--primary-accent)', fontWeight: 600 }}>{t('syncing_block_data')}</div>
                     ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                             <div style={{ fontSize: '2.5rem', color: 'var(--primary-accent)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -145,10 +147,10 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                 {/* Tabs Navigation */}
                 <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--glass-border)', marginBottom: '1.5rem' }}>
                     <button onClick={() => setActiveTab('history')} style={{ background: 'transparent', border: 'none', color: activeTab === 'history' ? 'var(--primary-accent)' : 'var(--text-muted)', fontWeight: 600, paddingBottom: '0.5rem', cursor: 'pointer', borderBottom: activeTab === 'history' ? '2px solid var(--primary-accent)' : '2px solid transparent', transition: 'all 0.2s' }}>
-                        Transaction History
+                        {t('tab_history')}
                     </button>
                     <button onClick={() => setActiveTab('send')} style={{ background: 'transparent', border: 'none', color: activeTab === 'send' ? 'var(--primary-accent)' : 'var(--text-muted)', fontWeight: 600, paddingBottom: '0.5rem', cursor: 'pointer', borderBottom: activeTab === 'send' ? '2px solid var(--primary-accent)' : '2px solid transparent', transition: 'all 0.2s' }}>
-                        ↗ Send LTC
+                        {t('tab_send')}
                     </button>
                 </div>
 
@@ -157,11 +159,11 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                     <div>
                         {isLoading ? (
                             <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)' }}>
-                                Loading blockchain records...
+                                {t('loading_blockchain')}
                             </div>
                         ) : history.length === 0 ? (
                             <div style={{ background: 'rgba(255,255,255,0.02)', padding: '2rem', textAlign: 'center', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--glass-border)' }}>
-                                <p style={{ color: 'var(--text-muted)', margin: 0 }}>No transactions found for this wallet on the Litecoin network.</p>
+                                <p style={{ color: 'var(--text-muted)', margin: 0 }}>{t('no_transactions')}</p>
                             </div>
                         ) : (
                             <div style={{ background: 'var(--glass-bg)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', overflow: 'hidden' }}>
@@ -169,10 +171,10 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                                         <thead style={{ background: 'rgba(0,0,0,0.7)', position: 'sticky', top: 0, zIndex: 1, backdropFilter: 'blur(10px)' }}>
                                             <tr>
-                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--glass-border)' }}>Type</th>
-                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--glass-border)' }}>Amount (LTC)</th>
-                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--glass-border)' }}>Date</th>
-                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--glass-border)' }}>TX Hash</th>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--glass-border)' }}>{t('table_type')}</th>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--glass-border)' }}>{t('table_amount')}</th>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--glass-border)' }}>{t('table_date')}</th>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--glass-border)' }}>{t('table_tx_hash')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -232,7 +234,7 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                 {activeTab === 'send' && (
                     <form onSubmit={handleSubmit} style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)' }}>
                         <div style={{ marginBottom: '1rem' }}>
-                            <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Recipient LTC Address</label>
+                            <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>{t('recipient_address')}</label>
                             <input
                                 type="text"
                                 className="input-premium"
@@ -245,7 +247,7 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                         </div>
                         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
                             <div style={{ flex: 1 }}>
-                                <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Amount (LTC)</label>
+                                <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>{t('amount_ltc')}</label>
                                 <input
                                     type="number"
                                     step="0.00000001"
@@ -262,7 +264,7 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                                 ⇌
                             </div>
                             <div style={{ flex: 1 }}>
-                                <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Expected (USD)</label>
+                                <label className="text-label" style={{ display: 'block', marginBottom: '0.5rem' }}>{t('expected_usd')}</label>
                                 <input
                                     type="number"
                                     step="0.01"
@@ -278,17 +280,17 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                         {isCalculating && (
                             <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '4px', border: isInsufficientFunds ? '1px solid rgba(255, 107, 107, 0.5)' : '1px solid var(--glass-border)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
-                                    <span>Network Fee (Estimated):</span>
-                                    <span>{isEstimatingFee ? 'Calculating...' : estimatedFee !== null ? `${estimatedFee.toFixed(8)} LTC` : 'N/A'}</span>
+                                    <span>{t('network_fee')}</span>
+                                    <span>{isEstimatingFee ? t('calculating') : estimatedFee !== null ? `${estimatedFee.toFixed(8)} LTC` : 'N/A'}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
-                                    <span>Total Deduction:</span>
-                                    <span>{isEstimatingFee ? 'Calculating...' : estimatedFee !== null ? `${(sendAmountNum + estimatedFee).toFixed(8)} LTC` : 'N/A'}</span>
+                                    <span>{t('total_deduction')}</span>
+                                    <span>{isEstimatingFee ? t('calculating') : estimatedFee !== null ? `${(sendAmountNum + estimatedFee).toFixed(8)} LTC` : 'N/A'}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', color: isInsufficientFunds ? '#ff6b6b' : '#fff', fontWeight: 600 }}>
-                                    <span>Remaining Balance:</span>
+                                    <span>{t('remaining_balance')}</span>
                                     <div style={{ textAlign: 'right' }}>
-                                        <div>{isEstimatingFee ? 'Calculating...' : isInsufficientFunds ? 'Insufficient Funds' : `${remainingLtcNum.toFixed(8)} LTC`}</div>
+                                        <div>{isEstimatingFee ? t('calculating') : isInsufficientFunds ? t('insufficient_funds') : `${remainingLtcNum.toFixed(8)} LTC`}</div>
                                         {!isInsufficientFunds && !isEstimatingFee && usdRate && (
                                             <div style={{ fontSize: '0.75rem', color: 'var(--primary-accent)', marginTop: '0.2rem', opacity: 0.8 }}>≈ ${(remainingLtcNum * usdRate).toFixed(2)} USD</div>
                                         )}
@@ -297,7 +299,7 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                             </div>
                         )}
                         <button type="submit" className="btn-primary" style={{ width: '100%', opacity: isSending || isEstimatingFee || isInsufficientFunds ? 0.7 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }} disabled={isSending || isEstimatingFee || isInsufficientFunds || !sendAddress || !sendAmount}>
-                            {isSending ? 'Broadcasting Transaction...' : isEstimatingFee ? 'Estimating Fee...' : isInsufficientFunds ? 'Insufficient LTC Balance' : 'Confirm Send Transaction'}
+                            {isSending ? t('btn_broadcasting') : isEstimatingFee ? t('btn_estimating_fee') : isInsufficientFunds ? t('btn_insufficient') : t('btn_confirm_send')}
                         </button>
                     </form>
                 )}
@@ -310,14 +312,14 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                             <div style={{ marginBottom: '1.5rem', color: 'var(--primary-accent)' }}>
                                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                             </div>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Confirm Transfer</h3>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Please enter your login password to authorize this LTC transaction.</p>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('password_prompt_title')}</h3>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>{t('password_prompt_desc')}</p>
 
                             <form onSubmit={handlePasswordConfirm}>
                                 <input
                                     type="password"
                                     className="input-premium"
-                                    placeholder="Enter your password"
+                                    placeholder={t('placeholder_password')}
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     autoFocus
@@ -329,13 +331,13 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                                         type="button"
                                         onClick={() => { setShowPasswordPrompt(false); setConfirmPassword(''); }}
                                         style={{ flex: 1, padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', cursor: 'pointer' }}
-                                    >Cancel</button>
+                                    >{t('cancel')}</button>
                                     <button
                                         type="submit"
                                         className="btn-primary"
                                         disabled={isVerifying}
                                         style={{ flex: 2 }}
-                                    >{isVerifying ? 'Verifying...' : 'Unlock & Send'}</button>
+                                    >{isVerifying ? t('btn_verifying') : t('btn_unlock_send')}</button>
                                 </div>
                             </form>
                         </div>

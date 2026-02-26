@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useTheme } from '../hooks/useTheme';
 import { supabase } from '../lib/supabase';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '../hooks/useTranslation';
 
 // Clean Minimalist Icons
 const Icons = {
@@ -32,6 +33,7 @@ export function AppSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { toggleTheme, isLightMode } = useTheme();
+    const { t } = useTranslation();
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -39,9 +41,9 @@ export function AppSidebar() {
     };
 
     const navItems = [
-        { name: 'Dashboard', href: '/dashboard', icon: Icons.Dashboard },
-        { name: 'Activity Log', href: '/activity', icon: Icons.Activity },
-        { name: 'Settings', href: '/settings', icon: Icons.Settings },
+        { name: t('nav_dashboard'), href: '/dashboard', icon: Icons.Dashboard },
+        { name: t('nav_activity'), href: '/activity', icon: Icons.Activity },
+        { name: t('nav_settings'), href: '/settings', icon: Icons.Settings },
     ];
 
     return (
@@ -117,7 +119,7 @@ export function AppSidebar() {
                     }}
                 >
                     {isLightMode() ? <Icons.Moon /> : <Icons.Sun />}
-                    {isLightMode() ? 'Dark Mode' : 'Light Mode'}
+                    {isLightMode() ? t('dark_mode') : t('light_mode')}
                 </button>
 
                 <button
@@ -139,7 +141,7 @@ export function AppSidebar() {
                     }}
                 >
                     <Icons.Logout />
-                    Logout
+                    {t('logout')}
                 </button>
             </div>
         </aside>

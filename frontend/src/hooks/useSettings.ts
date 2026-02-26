@@ -8,7 +8,8 @@ export function useSettings() {
     const [settings, setSettings] = useState<UserSettings>({
         user_id: '',
         require_password_for_tx: false,
-        theme: 'dark'
+        theme: 'dark',
+        language: 'en'
     });
     const [isLoading, setIsLoading] = useState(true);
 
@@ -31,6 +32,16 @@ export function useSettings() {
 
     useEffect(() => {
         fetchSettings();
+
+        const handleSettingsUpdated = (event: Event) => {
+            const customEvent = event as CustomEvent<UserSettings>;
+            if (customEvent.detail) {
+                setSettings(customEvent.detail);
+            }
+        };
+
+        window.addEventListener('settingsUpdated', handleSettingsUpdated);
+        return () => window.removeEventListener('settingsUpdated', handleSettingsUpdated);
     }, [fetchSettings]);
 
     const updateSetting = async (key: keyof UserSettings, value: any) => {
@@ -39,6 +50,7 @@ export function useSettings() {
             const oldSettings = { ...settings };
             const newSettings = { ...settings, [key]: value };
             setSettings(newSettings);
+            window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: newSettings }));
 
             try {
                 const result = await SettingsService.updateSettings(session.access_token, { [key]: value });

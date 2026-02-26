@@ -4,6 +4,7 @@ export interface UserSettings {
     user_id: string;
     require_password_for_tx: boolean;
     theme: string;
+    language: string;
     updated_at?: string;
 }
 

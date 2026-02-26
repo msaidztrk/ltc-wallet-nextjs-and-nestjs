@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface CreateWalletFormProps {
     onCreate: (name: string) => Promise<void>;
 }
 
 export function CreateWalletForm({ onCreate }: CreateWalletFormProps) {
+    const { t } = useTranslation();
     const [isCreating, setIsCreating] = useState(false);
     const [newWalletName, setNewWalletName] = useState('');
 
@@ -20,7 +22,7 @@ export function CreateWalletForm({ onCreate }: CreateWalletFormProps) {
     if (!isCreating) {
         return (
             <button className="btn-primary" onClick={() => setIsCreating(true)}>
-                + Generate New Wallet
+                + {t('btn_create')}
             </button>
         );
     }
@@ -30,19 +32,19 @@ export function CreateWalletForm({ onCreate }: CreateWalletFormProps) {
             <input
                 type="text"
                 className="input-premium"
-                placeholder="Wallet Name (e.g. Savings)"
+                placeholder={t('create_vault_placeholder')}
                 value={newWalletName}
                 onChange={(e) => setNewWalletName(e.target.value)}
                 autoFocus
                 required
             />
-            <button className="btn-primary" type="submit">Create</button>
+            <button className="btn-primary" type="submit">{t('btn_create').split(' ')[0]}</button>
             <button
                 type="button"
                 onClick={() => setIsCreating(false)}
                 style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}
             >
-                Cancel
+                {t('cancel')}
             </button>
         </form>
     );

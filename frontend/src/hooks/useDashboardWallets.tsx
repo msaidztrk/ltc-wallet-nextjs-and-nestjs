@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { WalletService } from '../services/wallet.service';
 import { LitecoinService } from '../services/litecoin.service';
 import { Wallet, TxRef } from '../types/wallet.types';
+import { useTranslation } from './useTranslation';
 
 export function useDashboardWallets() {
     const [wallets, setWallets] = useState<Wallet[]>([]);
@@ -21,6 +22,7 @@ export function useDashboardWallets() {
     const [ltcUsdRate, setLtcUsdRate] = useState<number | null>(null);
 
     const router = useRouter();
+    const { t } = useTranslation();
 
     useEffect(() => {
         checkUserAndFetchWallets();
@@ -152,7 +154,7 @@ export function useDashboardWallets() {
 
         const result = await WalletService.sendLTC(activeToken, selectedWallet.id, address, parseFloat(amount));
         if (result) {
-            toast.success(`Successfully sent ${amount} LTC!`);
+            toast.success(t('send_success', { amount }));
             openWalletDetails(selectedWallet);
             fetchActivityHistory(activeToken);
             return true;
@@ -168,7 +170,7 @@ export function useDashboardWallets() {
         const result = await WalletService.createWallet(activeToken, name);
         if (result && result.data) {
             setWallets((prev) => [...prev, result.data]);
-            toast.success('New Litecoin Vault Generated!');
+            toast.success(t('wallet_generated'));
         }
     };
 
@@ -177,30 +179,30 @@ export function useDashboardWallets() {
         const activeToken = session?.access_token;
         if (!activeToken) return;
 
-        toast((t) => (
+        toast((tObj) => (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}> Delete & apos; {name}& apos; Wallet ? </span>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}> {t('delete_confirm_title', { name })} </span>
                 < span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }
-                }> This action is irreversible.All access via this dashboard will be lost.</span>
+                }> {t('action_irreversible')}</span>
                 < div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
                     <button
-                        onClick={() => toast.dismiss(t.id)}
+                        onClick={() => toast.dismiss(tObj.id)}
                         style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
                     >
-                        Cancel
+                        {t('cancel')}
                     </button>
                     < button
                         onClick={async () => {
-                            toast.dismiss(t.id);
+                            toast.dismiss(tObj.id);
                             const result = await WalletService.deleteWallet(activeToken, id);
                             if (result) {
                                 setWallets((prev) => prev.filter((w) => w.id !== id));
-                                toast.success('Wallet deleted successfully');
+                                toast.success(t('wallet_deleted'));
                             }
                         }}
                         style={{ background: 'rgba(255,60,60,0.2)', color: '#ff6b6b', border: '1px solid rgba(255,60,60,0.3)', borderRadius: '4px', padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.8rem' }}
                     >
-                        Confirm Delete
+                        {t('confirm_delete')}
                     </button>
                 </div>
             </div>
@@ -215,7 +217,7 @@ export function useDashboardWallets() {
         const result = await WalletService.renameWallet(activeToken, id, newName);
         if (result) {
             setWallets((prev) => prev.map((w) => (w.id === id ? { ...w, name: newName } : w)));
-            toast.success('Wallet renamed successfully');
+            toast.success(t('wallet_renamed'));
         }
     };
 

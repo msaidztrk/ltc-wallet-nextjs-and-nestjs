@@ -4,8 +4,10 @@ import { useDashboardWallets } from '../../hooks/useDashboardWallets';
 import { WalletDetailsModal } from '../../components/Dashboard/WalletDetailsModal';
 import { CreateWalletForm } from '../../components/Dashboard/CreateWalletForm';
 import { WalletCard } from '../../components/Dashboard/WalletCard';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export default function Dashboard() {
+    const { t } = useTranslation();
     const {
         wallets,
         isLoading,
@@ -27,7 +29,7 @@ export default function Dashboard() {
         return (
             <main>
                 <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <p style={{ color: 'var(--text-muted)' }}>Decrypting Vault Data...</p>
+                    <p style={{ color: 'var(--text-muted)' }}>{t('decrypting_vault')}</p>
                 </div>
             </main>
         );
@@ -38,8 +40,8 @@ export default function Dashboard() {
             <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
 
                 <div style={{ marginBottom: '3rem' }}>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 0.5rem 0' }}>My <span style={{ color: 'var(--primary-accent)' }}>Vaults</span></h2>
-                    <p style={{ color: 'var(--text-muted)' }}>Securely manage your Litecoin assets across multiple addresses.</p>
+                    <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 0.5rem 0' }}>{t('my_vaults_title')} <span style={{ color: 'var(--primary-accent)' }}>{t('my_vaults_highlight')}</span></h2>
+                    <p style={{ color: 'var(--text-muted)' }}>{t('my_vaults_subtitle')}</p>
                 </div>
 
                 <div style={{ marginBottom: '2.5rem' }}>
@@ -48,13 +50,13 @@ export default function Dashboard() {
 
                 {wallets.length === 0 ? (
                     <div className="glass-container" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        <p>No wallets found in this vault.</p>
+                        <p>{t('no_wallets_found')}</p>
                     </div>
                 ) : (
                     <>
                         <div style={{ marginBottom: '2rem', background: 'var(--glass-bg)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
-                                <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Next Network Sync Process</span>
+                                <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{t('next_network_sync')}</span>
                                 <span style={{ color: 'var(--primary-accent)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{syncCountdown}s</span>
                             </div>
                             <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
