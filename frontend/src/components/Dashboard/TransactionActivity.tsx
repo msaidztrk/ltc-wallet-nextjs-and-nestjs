@@ -38,7 +38,7 @@ export function TransactionActivity({ logs, wallets }: TransactionActivityProps)
                     <thead>
                         <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)', textAlign: 'left' }}>
                             <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Action</th>
-                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Vault</th>
+                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Wallet</th>
                             <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Amount (LTC)</th>
                             <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Status</th>
                             <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Date</th>

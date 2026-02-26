@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Wallet, TxRef } from '../../types/wallet.types';
 import { useFeeCalculator } from '../../hooks/useFeeCalculator';
+import { useSettings } from '../../hooks/useSettings';
+import { SettingsService } from '../../services/settings.service';
+import { supabase } from '../../lib/supabase';
+import toast from 'react-hot-toast';
 
 interface WalletDetailsModalProps {
     wallet: Wallet;
@@ -18,6 +22,11 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
     const [sendAmount, setSendAmount] = useState('');
     const [sendUsdAmount, setSendUsdAmount] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
+
+    const { settings } = useSettings();
 
 
 
@@ -53,7 +62,35 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!sendAddress || !sendAmount || isInsufficientFunds) return;
-        await executeSendTransaction();
+
+        if (settings.require_password_for_tx) {
+            setShowPasswordPrompt(true);
+        } else {
+            await executeSendTransaction();
+        }
+    };
+
+    const handlePasswordConfirm = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsVerifying(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('Session expired');
+
+            const result = await SettingsService.verifyPassword(session.access_token, confirmPassword);
+
+            if (!result || !result.verified) {
+                return;
+            }
+
+            setShowPasswordPrompt(false);
+            setConfirmPassword('');
+            await executeSendTransaction();
+        } catch (error: any) {
+            console.error('Password verification error');
+        } finally {
+            setIsVerifying(false);
+        }
     };
 
     const executeSendTransaction = async () => {
@@ -266,6 +303,44 @@ export function WalletDetailsModal({ wallet, balance, history, isLoading, onClos
                 )}
 
 
+                {/* Password Confirmation Box (Glassmorphism Overlay) */}
+                {showPasswordPrompt && (
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: 'var(--radius-sm)' }}>
+                        <div style={{ width: '100%', maxWidth: '350px', padding: '2rem', textAlign: 'center' }}>
+                            <div style={{ marginBottom: '1.5rem', color: 'var(--primary-accent)' }}>
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                            </div>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Confirm Transfer</h3>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Please enter your login password to authorize this LTC transaction.</p>
+
+                            <form onSubmit={handlePasswordConfirm}>
+                                <input
+                                    type="password"
+                                    className="input-premium"
+                                    placeholder="Enter your password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    autoFocus
+                                    required
+                                    style={{ width: '100%', marginBottom: '1rem', textAlign: 'center' }}
+                                />
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setShowPasswordPrompt(false); setConfirmPassword(''); }}
+                                        style={{ flex: 1, padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', cursor: 'pointer' }}
+                                    >Cancel</button>
+                                    <button
+                                        type="submit"
+                                        className="btn-primary"
+                                        disabled={isVerifying}
+                                        style={{ flex: 2 }}
+                                    >{isVerifying ? 'Verifying...' : 'Unlock & Send'}</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

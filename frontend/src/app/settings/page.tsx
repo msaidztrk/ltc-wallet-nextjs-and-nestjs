@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '../../hooks/useTheme';
+import { useSettings } from '../../hooks/useSettings';
 
 export default function Settings() {
     const router = useRouter();
     const { toggleTheme, isLightMode } = useTheme();
-    const [isLoading, setIsLoading] = useState(true);
+    const { settings, isLoading: isSettingsLoading, updateSetting } = useSettings();
+    const [isPageLoading, setIsPageLoading] = useState(true);
 
     useEffect(() => {
         checkUserAndLoadSettings();
@@ -16,7 +18,7 @@ export default function Settings() {
     }, []);
 
     const checkUserAndLoadSettings = async () => {
-        setIsLoading(true);
+        setIsPageLoading(true);
         const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error || !session) {
@@ -24,10 +26,10 @@ export default function Settings() {
             return;
         }
 
-        setIsLoading(false);
+        setIsPageLoading(false);
     };
 
-    if (isLoading) {
+    if (isPageLoading || isSettingsLoading) {
         return (
             <main>
                 <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -38,48 +40,119 @@ export default function Settings() {
     }
 
     return (
-        <main>
-            <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <main style={{ padding: '3rem 1rem' }}>
+            <div style={{ maxWidth: '640px', margin: '0 auto' }}>
 
-                <div style={{ marginBottom: '3rem' }}>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 0.5rem 0' }}>Vault <span style={{ color: 'var(--primary-accent)' }}>Settings</span></h2>
-                    <p style={{ color: 'var(--text-muted)' }}>Customize your vault experience and security preferences.</p>
+                {/* Compact Header */}
+                <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <div>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, letterSpacing: '-0.01em', color: 'var(--text-main)' }}>
+                            Settings
+                        </h1>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
+                            Configure your vault experience.
+                        </p>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500, letterSpacing: '0.05em', opacity: 0.5 }}>
+                        v1.2.0-STABLE
+                    </span>
                 </div>
 
-                <div className="glass-container" style={{ padding: '2.5rem', marginBottom: '2rem' }}>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
-                        Security & Preferences
-                    </h2>
+                <div className="glass-container" style={{ padding: '0.5rem', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.01)' }}>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-
-                        {/* Theme Setting */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                            <div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>Display Theme</h3>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>Switch between Dark Mode (Default) and Light Mode.</p>
+                    {/* Theme Setting - Compact Row */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '1.25rem',
+                        borderBottom: '1px solid rgba(255,255,255,0.03)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ color: 'var(--primary-accent)', opacity: 0.8 }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
                             </div>
-                            <button
-                                onClick={toggleTheme}
-                                style={{
-                                    background: isLightMode() ? 'var(--primary-accent)' : 'rgba(0,0,0,0.3)',
-                                    border: `1px solid ${isLightMode() ? 'var(--primary-accent)' : 'var(--glass-border)'}`,
-                                    color: isLightMode() ? '#000' : 'var(--text-main)',
-                                    padding: '0.6rem 1.2rem',
-                                    borderRadius: 'var(--radius-sm)',
-                                    cursor: 'pointer',
-                                    fontWeight: 600,
-                                    transition: 'all 0.2s',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem'
-                                }}
-                            >
-                                {isLightMode() ? '☀️ Light Mode Active' : '🌙 Dark Mode Active'}
-                            </button>
+                            <div>
+                                <h3 style={{ fontSize: '0.95rem', fontWeight: 600, margin: 0 }}>Appearance</h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>Interface theme</p>
+                            </div>
                         </div>
 
+                        <button
+                            onClick={toggleTheme}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '6px',
+                                border: '1px solid var(--glass-border)',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                fontSize: '0.8rem',
+                                transition: 'all 0.2s',
+                                background: 'rgba(0,0,0,0.2)',
+                                color: 'var(--text-main)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            {isLightMode() ? '☀️ Light' : '🌙 Dark'}
+                        </button>
                     </div>
+
+                    {/* Password Security - Compact Row */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '1.25rem'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ color: 'var(--primary-accent)', opacity: 0.8 }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '0.95rem', fontWeight: 600, margin: 0 }}>2FA Confirmation</h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>Password for transfers</p>
+                            </div>
+                        </div>
+
+                        <div
+                            onClick={() => updateSetting('require_password_for_tx', !settings.require_password_for_tx)}
+                            style={{
+                                width: '44px',
+                                height: '24px',
+                                background: settings.require_password_for_tx ? 'var(--primary-accent)' : 'rgba(255,255,255,0.1)',
+                                borderRadius: '20px',
+                                padding: '2px',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease',
+                                position: 'relative'
+                            }}
+                        >
+                            <div style={{
+                                width: '20px',
+                                height: '20px',
+                                background: settings.require_password_for_tx ? '#000' : '#fff',
+                                borderRadius: '50%',
+                                transition: 'all 0.2s ease',
+                                transform: settings.require_password_for_tx ? 'translateX(20px)' : 'translateX(0)',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            }} />
+                        </div>
+                    </div>
+
+                </div>
+
+                {/* Direct Logout / Danger Area (Minimalist) */}
+                <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.03)', display: 'flex', justifyContent: 'center' }}>
+                    <button
+                        onClick={() => supabase.auth.signOut()}
+                        style={{ background: 'transparent', border: 'none', color: '#ff6b6b', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer', opacity: 0.7, transition: 'opacity 0.2s' }}
+                        onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
+                        onMouseOut={(e) => e.currentTarget.style.opacity = '0.7'}
+                    >
+                        Sign out of account
+                    </button>
                 </div>
 
             </div>
