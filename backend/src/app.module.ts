@@ -11,6 +11,7 @@ import { CommonModule } from './common/common.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 import { AuthModule } from './auth/auth.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AuthModule } from './auth/auth.module';
     WalletModule,
     CryptoModule,
     AuthModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -40,7 +42,8 @@ export class AppModule implements NestModule {
       .forRoutes(
         { path: 'wallets', method: RequestMethod.ALL },
         { path: 'wallets/:id', method: RequestMethod.ALL },
-        { path: 'auth/verify-password', method: RequestMethod.POST }
+        { path: 'auth/verify-password', method: RequestMethod.POST },
+        { path: 'settings', method: RequestMethod.ALL }
       );
   }
 }
