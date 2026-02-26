@@ -5,8 +5,8 @@ import { SupabaseService } from '../supabase/supabase.service';
 export class SettingsRepository {
     constructor(private readonly supabaseService: SupabaseService) { }
 
-    async getSettings(userId: string) {
-        const { data, error } = await this.supabaseService.getClient()
+    async getSettings(userId: string, token: string) {
+        const { data, error } = await this.supabaseService.getClient(token)
             .from('user_settings')
             .select('*')
             .eq('user_id', userId)
@@ -18,21 +18,25 @@ export class SettingsRepository {
             return {
                 user_id: userId,
                 require_password_for_tx: false,
-                theme: 'dark'
+                theme: 'dark',
+                language: 'en'
             };
         }
 
         return data;
     }
 
-    async updateSettings(userId: string, settings: any) {
-        const { data, error } = await this.supabaseService.getClient()
+    async updateSettings(userId: string, settings: any, token: string) {
+        const { data, error } = await this.supabaseService.getClient(token)
             .from('user_settings')
             .upsert({ user_id: userId, ...settings })
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase Upsert Error in Settings:', JSON.stringify(error, null, 2));
+            throw error;
+        }
         return data;
     }
 }

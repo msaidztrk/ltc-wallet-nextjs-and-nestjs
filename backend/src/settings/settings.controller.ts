@@ -9,14 +9,16 @@ export class SettingsController {
     @Get()
     async getSettings(@Req() req) {
         const user = req['authenticatedUser'];
-        return this.settingsRepository.getSettings(user.id);
+        const token = req['jwtToken'];
+        return this.settingsRepository.getSettings(user.id, token);
     }
 
     @Post()
     async updateSettings(@Req() req, @Body() settings: any) {
         const user = req['authenticatedUser'];
+        const token = req['jwtToken'];
         // Ensure user_id is the authenticated user's ID
         const { user_id, ...updatePayload } = settings;
-        return this.settingsRepository.updateSettings(user.id, updatePayload);
+        return this.settingsRepository.updateSettings(user.id, updatePayload, token);
     }
 }

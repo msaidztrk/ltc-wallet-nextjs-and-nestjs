@@ -98,3 +98,7 @@ CREATE POLICY "Users can insert their own settings" ON public.user_settings FOR 
 -- Add deleted_at column for Soft Delete (Safe Delete)
 ALTER TABLE public.wallets 
 ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
+
+-- Add language column for i18n (Internationalization)
+ALTER TABLE public.user_settings
+ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'en';
