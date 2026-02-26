@@ -38,8 +38,6 @@ export function useSettings() {
         if (session) {
             const oldSettings = { ...settings };
             const newSettings = { ...settings, [key]: value };
-
-            // Optimistic update
             setSettings(newSettings);
 
             try {
@@ -49,7 +47,6 @@ export function useSettings() {
                 }
             } catch (error) {
                 console.error('Failed to update settings:', error);
-                // Rollback if failed
                 setSettings(oldSettings);
             }
         }

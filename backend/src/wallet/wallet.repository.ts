@@ -24,7 +24,8 @@ export class WalletRepository {
         const { data, error } = await this.databaseManager.getClient(jwtToken)
             .from('wallets')
             .select('id, name, created_at, encrypted_mnemonic')
-            .eq('user_id', authenticatedUserId);
+            .eq('user_id', authenticatedUserId)
+            .is('deleted_at', null);
 
         if (error) {
             console.error('Supabase Selection Error:', error);
@@ -40,6 +41,7 @@ export class WalletRepository {
             .select('encrypted_mnemonic')
             .eq('id', walletId)
             .eq('user_id', authenticatedUserId)
+            .is('deleted_at', null)
             .single();
 
         if (error || !data) {
@@ -69,7 +71,7 @@ export class WalletRepository {
     async deleteWallet(walletId: string, authenticatedUserId: string, jwtToken: string) {
         const { error } = await this.databaseManager.getClient(jwtToken)
             .from('wallets')
-            .delete()
+            .update({ deleted_at: new Date().toISOString() })
             .eq('id', walletId)
             .eq('user_id', authenticatedUserId);
 

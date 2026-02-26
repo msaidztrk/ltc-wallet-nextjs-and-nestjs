@@ -90,3 +90,11 @@ CREATE POLICY "Users can insert their own error logs" ON public.error_logs FOR I
 CREATE POLICY "Users can view their own settings" ON public.user_settings FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can update their own settings" ON public.user_settings FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert their own settings" ON public.user_settings FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- --------------------------------------------------------
+-- MIGRATIONS & UPDATES
+-- --------------------------------------------------------
+
+-- Add deleted_at column for Soft Delete (Safe Delete)
+ALTER TABLE public.wallets 
+ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;

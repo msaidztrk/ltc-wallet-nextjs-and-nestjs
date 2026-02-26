@@ -75,10 +75,13 @@ export function useDashboardWallets() {
             isSyncing = true;
             let freshWallets: Wallet[] = [];
 
-            if (!token) {
+            const { data: { session } } = await supabase.auth.getSession();
+            const activeToken = session?.access_token;
+
+            if (!activeToken) {
                 freshWallets = [...wallets];
             } else {
-                const dbData = await WalletService.getWallets(token);
+                const dbData = await WalletService.getWallets(activeToken);
                 freshWallets = dbData?.data ? dbData.data : [...wallets];
             }
 
@@ -143,22 +146,26 @@ export function useDashboardWallets() {
     };
 
     const handleSendLTC = async (address: string, amount: string) => {
-        if (!token || !selectedWallet) return false;
+        const { data: { session } } = await supabase.auth.getSession();
+        const activeToken = session?.access_token;
+        if (!activeToken || !selectedWallet) return false;
 
-        const result = await WalletService.sendLTC(token, selectedWallet.id, address, parseFloat(amount));
+        const result = await WalletService.sendLTC(activeToken, selectedWallet.id, address, parseFloat(amount));
         if (result) {
             toast.success(`Successfully sent ${amount} LTC!`);
             openWalletDetails(selectedWallet);
-            fetchActivityHistory(token); // Refresh activity after send
+            fetchActivityHistory(activeToken);
             return true;
         }
         return false;
     };
 
     const handleCreateWallet = async (name: string) => {
-        if (!token) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        const activeToken = session?.access_token;
+        if (!activeToken) return;
 
-        const result = await WalletService.createWallet(token, name);
+        const result = await WalletService.createWallet(activeToken, name);
         if (result && result.data) {
             setWallets((prev) => [...prev, result.data]);
             toast.success('New Litecoin Vault Generated!');
@@ -166,7 +173,9 @@ export function useDashboardWallets() {
     };
 
     const handleDeleteWallet = async (id: string, name: string) => {
-        if (!token) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        const activeToken = session?.access_token;
+        if (!activeToken) return;
 
         toast((t) => (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -183,7 +192,7 @@ export function useDashboardWallets() {
                     < button
                         onClick={async () => {
                             toast.dismiss(t.id);
-                            const result = await WalletService.deleteWallet(token, id);
+                            const result = await WalletService.deleteWallet(activeToken, id);
                             if (result) {
                                 setWallets((prev) => prev.filter((w) => w.id !== id));
                                 toast.success('Wallet deleted successfully');
@@ -199,9 +208,11 @@ export function useDashboardWallets() {
     };
 
     const submitEditWallet = async (id: string, newName: string) => {
-        if (!token) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        const activeToken = session?.access_token;
+        if (!activeToken) return;
 
-        const result = await WalletService.renameWallet(token, id, newName);
+        const result = await WalletService.renameWallet(activeToken, id, newName);
         if (result) {
             setWallets((prev) => prev.map((w) => (w.id === id ? { ...w, name: newName } : w)));
             toast.success('Wallet renamed successfully');
@@ -230,6 +241,9 @@ export function useDashboardWallets() {
         submitEditWallet,
         handleLogout,
         activityHistory,
-        fetchActivityHistory: () => token && fetchActivityHistory(token)
+        fetchActivityHistory: async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) fetchActivityHistory(session.access_token);
+        }
     };
 }
