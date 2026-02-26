@@ -127,3 +127,4 @@ backend/dist/
 backend/dist-test/
 /.agents
 tasks.md
+tasks_utf8.md
