@@ -5,6 +5,7 @@ export interface UserSettings {
     require_password_for_tx: boolean;
     theme: string;
     language: string;
+    sync_interval?: number;
     updated_at?: string;
 }
 

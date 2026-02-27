@@ -9,7 +9,8 @@ export function useSettings() {
         user_id: '',
         require_password_for_tx: false,
         theme: 'dark',
-        language: 'en'
+        language: 'en',
+        sync_interval: 120
     });
     const [isLoading, setIsLoading] = useState(true);
 

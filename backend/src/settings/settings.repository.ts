@@ -19,8 +19,13 @@ export class SettingsRepository {
                 user_id: userId,
                 require_password_for_tx: false,
                 theme: 'dark',
-                language: 'en'
+                language: 'en',
+                sync_interval: 120
             };
+        }
+
+        if (data.sync_interval === undefined || data.sync_interval === null) {
+            data.sync_interval = 120;
         }
 
         return data;

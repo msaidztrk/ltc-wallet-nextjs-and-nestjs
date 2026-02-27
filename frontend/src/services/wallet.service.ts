@@ -24,4 +24,12 @@ export class WalletService {
     static async getActivityHistory(token: string) {
         return apiClient.get('/wallets/history', { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
     }
+
+    static async getWalletBalance(token: string, id: string) {
+        return apiClient.get(`/wallets/${id}/balance`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
+    }
+
+    static async getApiRateLimit(token: string) {
+        return apiClient.get('/wallets/rate-limit', { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
+    }
 }

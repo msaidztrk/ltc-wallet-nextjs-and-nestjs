@@ -102,3 +102,7 @@ ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
 -- Add language column for i18n (Internationalization)
 ALTER TABLE public.user_settings
 ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'en';
+
+-- Add sync_interval column for Auto-Sync settings
+ALTER TABLE public.user_settings
+ADD COLUMN IF NOT EXISTS sync_interval INTEGER DEFAULT 120;

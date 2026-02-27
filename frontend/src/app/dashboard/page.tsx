@@ -17,6 +17,7 @@ export default function Dashboard() {
         selectedWalletLoading,
         selectedWalletHistory,
         ltcUsdRate,
+        apiRateLimitRemaining,
         openWalletDetails,
         closeWalletDetails,
         handleSendLTC,
@@ -54,13 +55,32 @@ export default function Dashboard() {
                     </div>
                 ) : (
                     <>
-                        <div style={{ marginBottom: '2rem', background: 'var(--glass-bg)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
-                                <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{t('next_network_sync')}</span>
-                                <span style={{ color: 'var(--primary-accent)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{syncCountdown}s</span>
+                        <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
+                            {/* API Limit Card */}
+                            <div style={{ flex: 1, background: 'var(--glass-bg)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>{t('api_limit_remaining')}</span>
+                                    <span style={{
+                                        color: apiRateLimitRemaining !== null && apiRateLimitRemaining < 20 ? '#ff6b6b' : 'var(--primary-accent)',
+                                        fontWeight: 800,
+                                        fontFamily: 'var(--font-mono)',
+                                        fontSize: '1.2rem'
+                                    }}>
+                                        {apiRateLimitRemaining !== null ? apiRateLimitRemaining : '...'}
+                                    </span>
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>BlockCypher Free Tier</div>
                             </div>
-                            <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                                <div style={{ width: `${(syncCountdown / 120) * 100}%`, height: '100%', background: 'linear-gradient(90deg, transparent, var(--primary-accent))', transition: 'width 1s linear', boxShadow: '0 0 10px var(--primary-accent)' }} />
+
+                            {/* Sync Timer Card */}
+                            <div style={{ flex: 1, background: 'var(--glass-bg)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
+                                    <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{t('next_network_sync')}</span>
+                                    <span style={{ color: 'var(--primary-accent)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{syncCountdown}s</span>
+                                </div>
+                                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                                    <div style={{ width: `${(syncCountdown / 120) * 100}%`, height: '100%', background: 'linear-gradient(90deg, transparent, var(--primary-accent))', transition: 'width 1s linear', boxShadow: '0 0 10px var(--primary-accent)' }} />
+                                </div>
                             </div>
                         </div>
 

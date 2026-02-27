@@ -29,6 +29,8 @@ export const translations = {
         'security_subtitle': 'Password for transfers',
         'lang_title': 'Language',
         'lang_subtitle': 'Display language for prompts',
+        'sync_interval_title': 'Auto-Sync Interval',
+        'sync_interval_subtitle': 'How often to fetch blockchain data',
         'sign_out_btn': 'Sign out of account',
         // Dashboard Page
         'decrypting_vault': 'Decrypting Vault Data...',
@@ -37,6 +39,8 @@ export const translations = {
         'my_vaults_subtitle': 'Securely manage your Litecoin assets across multiple addresses.',
         'no_wallets_found': 'No wallets found in this vault.',
         'next_network_sync': 'Next Network Sync Process',
+        'api_limit_remaining': 'Network API Limit (req/h):',
+        'api_limit_reached': 'API Limit Reached! Synching paused.',
         // Wallet Card & Forms
         'auto_sync': 'Auto-Sync:',
         'syncing': 'Syncing...',
@@ -122,6 +126,8 @@ export const translations = {
         'security_subtitle': 'Transferler için şifre',
         'lang_title': 'Dil',
         'lang_subtitle': 'Arayüz ve uyarı dili',
+        'sync_interval_title': 'Otomatik Senk. Süresi',
+        'sync_interval_subtitle': 'Blockchain verisi ne sıklıkla çekilsin',
         'sign_out_btn': 'Hesaptan Çıkış Yap',
         // Dashboard Page
         'decrypting_vault': 'Kasa Verileri Çözülüyor...',
@@ -130,6 +136,8 @@ export const translations = {
         'my_vaults_subtitle': 'Litecoin varlıklarınızı birden fazla adres üzerinden güvenle yönetin.',
         'no_wallets_found': 'Bu kasada cüzdan bulunamadı.',
         'next_network_sync': 'Sonraki Ağ Senkronizasyonu',
+        'api_limit_remaining': 'Ağ API Limiti (İstek/Saat):',
+        'api_limit_reached': 'API Limitine Ulaşıldı! Senkronizasyon duraklatıldı.',
         // Wallet Card & Forms
         'auto_sync': 'Oto-Senk:',
         'syncing': 'Eşitleniyor...',

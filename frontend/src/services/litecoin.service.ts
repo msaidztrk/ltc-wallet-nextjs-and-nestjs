@@ -2,9 +2,34 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { BLOCKCYPHER_API_URL, BINANCE_API_URL } from '../lib/constants';
 
+const blockcypherAxios = axios.create();
+
+blockcypherAxios.interceptors.response.use(
+    (response) => {
+        if (typeof window !== 'undefined') {
+            const remaining = response.headers['x-ratelimit-remaining'];
+            if (remaining !== undefined) {
+                window.dispatchEvent(new CustomEvent('apiRateLimitUpdate', { detail: Number(remaining) }));
+            }
+        }
+        return response;
+    },
+    (error) => {
+        if (typeof window !== 'undefined') {
+            if (error.response && error.response.status === 429) {
+                window.dispatchEvent(new CustomEvent('apiRateLimitUpdate', { detail: 0 }));
+            }
+            else if (error.message === 'Network Error') {
+                window.dispatchEvent(new CustomEvent('apiRateLimitUpdate', { detail: 0 }));
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export class LitecoinService {
     static async getAddressDetails(publicAddress: string) {
-        return axios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}`)
+        return blockcypherAxios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}`)
             .then(res => res.data)
             .catch(e => {
                 console.error(e);
@@ -14,7 +39,7 @@ export class LitecoinService {
     }
 
     static async getBalance(publicAddress: string) {
-        return axios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}/balance`)
+        return blockcypherAxios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}/balance`)
             .then(res => res.data)
             .catch(() => null);
     }
@@ -27,7 +52,7 @@ export class LitecoinService {
 
     static async getEstimatedFee(publicAddress: string, amountToSendLtc: number): Promise<number | null> {
         try {
-            const res = await axios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}?unspentOnly=true`);
+            const res = await blockcypherAxios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}?unspentOnly=true`);
             const utxos = res.data.txrefs || [];
 
             const amountToSendSats = Math.floor(amountToSendLtc * 100000000);

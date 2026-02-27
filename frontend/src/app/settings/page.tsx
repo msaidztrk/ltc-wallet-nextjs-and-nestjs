@@ -196,6 +196,55 @@ export default function Settings() {
                         </div>
                     </div>
 
+                    {/* Sync Interval - Compact Row */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '1.25rem',
+                        borderTop: '1px solid rgba(255,255,255,0.03)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ color: 'var(--primary-accent)', opacity: 0.8 }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '0.95rem', fontWeight: 600, margin: 0 }}>{t('sync_interval_title')}</h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>{t('sync_interval_subtitle')}</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <select
+                                value={settings.sync_interval || 120}
+                                onChange={(e) => updateSetting('sync_interval', Number(e.target.value))}
+                                style={{
+                                    padding: '0.4rem 0.8rem',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--glass-border)',
+                                    background: 'rgba(0,0,0,0.2)',
+                                    color: 'var(--text-main)',
+                                    cursor: 'pointer',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                    outline: 'none',
+                                    transition: 'all 0.2s',
+                                    appearance: 'none',
+                                    paddingRight: '1.5rem',
+                                    backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23cccccc%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")`,
+                                    backgroundRepeat: 'no-repeat',
+                                    backgroundPosition: 'right .7em top 50%',
+                                    backgroundSize: '.65em auto'
+                                }}
+                            >
+                                <option value={60}>60s</option>
+                                <option value={120}>120s</option>
+                                <option value={300}>300s</option>
+                                <option value={600}>600s</option>
+                            </select>
+                        </div>
+                    </div>
+
                 </div>
 
                 {/* Direct Logout / Danger Area (Minimalist) */}
