@@ -58,6 +58,28 @@ export class WalletController {
         };
     }
 
+    @Get('rate-limit')
+    @HttpCode(HttpStatus.OK)
+    async checkApiRateLimit() {
+        return this.walletManagementService.checkApiRateLimit();
+    }
+
+    @Get(':id/balance')
+    @HttpCode(HttpStatus.OK)
+    async fetchWalletBalance(
+        @Req() incomingHttpRequest: Request,
+        @Param('id') targetWalletId: string,
+    ) {
+        const authenticatedUserId = incomingHttpRequest['authenticatedUser'].id;
+        const jwtToken = incomingHttpRequest['jwtToken'];
+
+        return await this.walletManagementService.getWalletBalanceFromBlockchain(
+            authenticatedUserId,
+            targetWalletId,
+            jwtToken
+        );
+    }
+
     @Patch(':id')
     @HttpCode(HttpStatus.OK)
     async renameWallet(

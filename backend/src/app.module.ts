@@ -41,7 +41,11 @@ export class AppModule implements NestModule {
       .apply(AuthMiddleware)
       .forRoutes(
         { path: 'wallets', method: RequestMethod.ALL },
+        { path: 'wallets/history', method: RequestMethod.GET },
+        { path: 'wallets/rate-limit', method: RequestMethod.GET },
         { path: 'wallets/:id', method: RequestMethod.ALL },
+        { path: 'wallets/:id/balance', method: RequestMethod.GET },
+        { path: 'wallets/:id/send', method: RequestMethod.POST },
         { path: 'auth/verify-password', method: RequestMethod.POST },
         { path: 'settings', method: RequestMethod.ALL }
       );

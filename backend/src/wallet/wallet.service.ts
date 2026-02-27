@@ -11,6 +11,7 @@ import { LITECOIN_NETWORK, BLOCKCYPHER_BASE_URL } from '../common/constants';
 import { LoggerService } from '../common/logger.service';
 import { CurrencyUtils } from '../common/utils/currency.utils';
 import { WalletTransactionService } from './wallet-transaction.service';
+import { BlockchainService } from './services/blockchain.service';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -23,6 +24,7 @@ export class WalletService {
         private readonly walletRepository: WalletRepository,
         private readonly loggerService: LoggerService,
         private readonly txService: WalletTransactionService,
+        private readonly blockchainService: BlockchainService,
     ) { }
 
     private async getWalletKeysAndAddress(mnemonic: string) {
@@ -158,5 +160,59 @@ export class WalletService {
             throw new InternalServerErrorException('Could not fetch transaction history');
         }
         return data;
+    }
+
+    async checkApiRateLimit() {
+        try {
+            await this.blockchainService.pingBlockcypherApi();
+            return {
+                status: 'success',
+                remaining: this.blockchainService.getAndIncrementHourlyLimit()
+            };
+        } catch (error) {
+            if (error.response && error.response.status === 429) {
+                return { status: 'success', remaining: 0 };
+            }
+            throw new InternalServerErrorException('Could not check API rate limit');
+        }
+    }
+
+    async getWalletBalanceFromBlockchain(authenticatedUserId: string, targetWalletId: string, jwtToken: string) {
+        try {
+            const walletData = await this.walletRepository.findWalletByIdAndUserId(targetWalletId, authenticatedUserId, jwtToken);
+            const decryptedMnemonic = this.cryptoManager.decryptData(walletData.encrypted_mnemonic);
+            const { publicAddress } = await this.getWalletKeysAndAddress(decryptedMnemonic);
+
+            let balanceSats = 0;
+            let remaining = this.blockchainService.getAndIncrementHourlyLimit();
+            let isFallback = false;
+
+            try {
+                balanceSats = await this.blockchainService.getBlockcypherBalance(publicAddress);
+            } catch (blockError) {
+                if (blockError.response && blockError.response.status === 429) {
+                    console.log(`[Rate Limit] Blockcypher 429 for ${publicAddress}. Falling back to litecoinspace.org...`);
+                    balanceSats = await this.blockchainService.getLitecoinSpaceBalance(publicAddress);
+
+                    remaining = 0;
+                    isFallback = true;
+                } else {
+                    throw blockError;
+                }
+            }
+
+            return {
+                status: 'success',
+                balance: balanceSats,
+                apiLimit: remaining,
+                isFallback
+            };
+        } catch (error) {
+            console.error('getWalletBalanceFromBlockchain Error:', error?.response?.data || error.message);
+            if (error.response && error.response.status === 429) {
+                return { status: 'error', reason: 'rate_limit', apiLimit: 0 };
+            }
+            throw new InternalServerErrorException('Failed to fetch balance from blockchain node');
+        }
     }
 }
