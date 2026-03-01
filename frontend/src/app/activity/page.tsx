@@ -1,11 +1,11 @@
 "use client";
 
-import { useDashboardWallets } from '../../hooks/useDashboardWallets';
+import { useWalletState } from '../../hooks/dashboard/useWalletState';
 import { TransactionActivity } from '../../components/Dashboard/TransactionActivity';
 import { useTranslation } from '../../hooks/useTranslation';
 
 export default function ActivityPage() {
-    const { activityHistory, wallets, isLoading } = useDashboardWallets();
+    const { activityHistory, wallets, isLoading } = useWalletState();
     const { t } = useTranslation();
 
     if (isLoading) {

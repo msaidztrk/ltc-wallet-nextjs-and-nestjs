@@ -11,15 +11,19 @@ export class BlockchainService {
         const now = Date.now();
         if (now > this.hourlyApiResetTime) {
             this.hourlyApiCounter = 0;
-            this.hourlyApiResetTime = now + 3600000;
+            this.hourlyApiResetTime = now + 3600000; // 1 hr from now
         }
         this.hourlyApiCounter++;
         return Math.max(0, 200 - this.hourlyApiCounter);
     }
 
+    getApiResetTime(): number {
+        return this.hourlyApiResetTime;
+    }
+
     async getBlockcypherBalance(publicAddress: string): Promise<number> {
         const response = await axios.get(`${BLOCKCYPHER_BASE_URL}/addrs/${publicAddress}/balance`);
-        return response.data.balance;
+        return response.data.final_balance;
     }
 
     async getLitecoinSpaceBalance(publicAddress: string): Promise<number> {

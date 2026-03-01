@@ -167,11 +167,12 @@ export class WalletService {
             await this.blockchainService.pingBlockcypherApi();
             return {
                 status: 'success',
-                remaining: this.blockchainService.getAndIncrementHourlyLimit()
+                remaining: this.blockchainService.getAndIncrementHourlyLimit(),
+                resetTime: this.blockchainService.getApiResetTime()
             };
         } catch (error) {
             if (error.response && error.response.status === 429) {
-                return { status: 'success', remaining: 0 };
+                return { status: 'success', remaining: 0, resetTime: this.blockchainService.getApiResetTime() };
             }
             throw new InternalServerErrorException('Could not check API rate limit');
         }
@@ -183,34 +184,29 @@ export class WalletService {
             const decryptedMnemonic = this.cryptoManager.decryptData(walletData.encrypted_mnemonic);
             const { publicAddress } = await this.getWalletKeysAndAddress(decryptedMnemonic);
 
-            let balanceSats = 0;
             let remaining = this.blockchainService.getAndIncrementHourlyLimit();
-            let isFallback = false;
+            let balanceSats = 0;
 
             try {
                 balanceSats = await this.blockchainService.getBlockcypherBalance(publicAddress);
             } catch (blockError) {
                 if (blockError.response && blockError.response.status === 429) {
-                    console.log(`[Rate Limit] Blockcypher 429 for ${publicAddress}. Falling back to litecoinspace.org...`);
-                    balanceSats = await this.blockchainService.getLitecoinSpaceBalance(publicAddress);
-
                     remaining = 0;
-                    isFallback = true;
-                } else {
                     throw blockError;
                 }
+                throw blockError;
             }
 
             return {
                 status: 'success',
                 balance: balanceSats,
                 apiLimit: remaining,
-                isFallback
+                resetTime: this.blockchainService.getApiResetTime()
             };
         } catch (error) {
             console.error('getWalletBalanceFromBlockchain Error:', error?.response?.data || error.message);
             if (error.response && error.response.status === 429) {
-                return { status: 'error', reason: 'rate_limit', apiLimit: 0 };
+                return { status: 'error', reason: 'rate_limit', apiLimit: 0, resetTime: this.blockchainService.getApiResetTime() };
             }
             throw new InternalServerErrorException('Failed to fetch balance from blockchain node');
         }

@@ -18,6 +18,7 @@ export default function Dashboard() {
         selectedWalletHistory,
         ltcUsdRate,
         apiRateLimitRemaining,
+        apiRateLimitResetTime,
         openWalletDetails,
         closeWalletDetails,
         handleSendLTC,
@@ -35,6 +36,12 @@ export default function Dashboard() {
             </main>
         );
     }
+
+    const formatResetTime = (timestamp: number | null) => {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
 
     return (
         <main>
@@ -69,7 +76,12 @@ export default function Dashboard() {
                                         {apiRateLimitRemaining !== null ? apiRateLimitRemaining : '...'}
                                     </span>
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>BlockCypher Free Tier</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                    {apiRateLimitRemaining === 0 && apiRateLimitResetTime ?
+                                        <span style={{ color: '#ff6b6b' }}>Limits reset at {formatResetTime(apiRateLimitResetTime)}</span>
+                                        : 'BlockCypher Free Tier'
+                                    }
+                                </div>
                             </div>
 
                             {/* Sync Timer Card */}
