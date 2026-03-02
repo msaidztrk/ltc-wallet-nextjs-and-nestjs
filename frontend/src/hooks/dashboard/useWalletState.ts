@@ -66,6 +66,7 @@ export function useWalletState() {
         activityHistory,
         fetchActivityHistory,
         ltcUsdRate,
+        fetchLtcRate,
         router
     };
 }

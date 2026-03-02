@@ -19,6 +19,7 @@ export default function Dashboard() {
         ltcUsdRate,
         apiRateLimitRemaining,
         apiRateLimitResetTime,
+        isSyncPaused,
         openWalletDetails,
         closeWalletDetails,
         handleSendLTC,
@@ -56,61 +57,73 @@ export default function Dashboard() {
                     <CreateWalletForm onCreate={handleCreateWallet} />
                 </div>
 
+                <div style={{ marginBottom: '2.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                    {/* Market Rate Card */}
+                    <div style={{ flex: '1 1 200px', background: 'var(--glass-bg)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>{t('ltc_price')}</span>
+                            <span style={{ color: '#fff', fontWeight: 800, fontFamily: 'var(--font-mono)', fontSize: '1.2rem' }}>
+                                {ltcUsdRate !== null ? `$${ltcUsdRate.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '...'}
+                            </span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Binance Real-time</div>
+                    </div>
+
+                    {/* API Limit Card */}
+                    <div style={{ flex: '1 1 200px', background: 'var(--glass-bg)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>{t('api_limit_remaining')}</span>
+                            <span style={{
+                                color: apiRateLimitRemaining !== null && apiRateLimitRemaining < 20 ? '#ff6b6b' : 'var(--primary-accent)',
+                                fontWeight: 800,
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: '1.2rem'
+                            }}>
+                                {apiRateLimitRemaining !== null ? apiRateLimitRemaining : '...'}
+                            </span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {apiRateLimitRemaining === 0 && apiRateLimitResetTime ?
+                                <span style={{ color: '#ff6b6b' }}>Limits reset at {formatResetTime(apiRateLimitResetTime)}</span>
+                                : 'BlockCypher Free Tier'
+                            }
+                        </div>
+                    </div>
+
+                    {/* Sync Timer Card */}
+                    <div style={{ flex: 1, background: 'var(--glass-bg)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: `1px solid ${isSyncPaused ? 'rgba(255,200,0,0.25)' : 'var(--glass-border)'}` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
+                            <span style={{ color: isSyncPaused ? '#f0c040' : 'var(--text-muted)', fontWeight: 600 }}>
+                                {isSyncPaused ? '⏸ Sync Paused (tab inactive)' : t('next_network_sync')}
+                            </span>
+                            <span style={{ color: isSyncPaused ? '#f0c040' : 'var(--primary-accent)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                                {isSyncPaused ? '—' : `${syncCountdown}s`}
+                            </span>
+                        </div>
+                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ width: isSyncPaused ? '100%' : `${(syncCountdown / 120) * 100}%`, height: '100%', background: isSyncPaused ? 'rgba(240,192,64,0.3)' : 'linear-gradient(90deg, transparent, var(--primary-accent))', transition: 'width 1s linear', boxShadow: isSyncPaused ? 'none' : '0 0 10px var(--primary-accent)' }} />
+                        </div>
+                    </div>
+                </div>
+
                 {wallets.length === 0 ? (
                     <div className="glass-container" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                         <p>{t('no_wallets_found')}</p>
                     </div>
                 ) : (
-                    <>
-                        <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
-                            {/* API Limit Card */}
-                            <div style={{ flex: 1, background: 'var(--glass-bg)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>{t('api_limit_remaining')}</span>
-                                    <span style={{
-                                        color: apiRateLimitRemaining !== null && apiRateLimitRemaining < 20 ? '#ff6b6b' : 'var(--primary-accent)',
-                                        fontWeight: 800,
-                                        fontFamily: 'var(--font-mono)',
-                                        fontSize: '1.2rem'
-                                    }}>
-                                        {apiRateLimitRemaining !== null ? apiRateLimitRemaining : '...'}
-                                    </span>
-                                </div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                    {apiRateLimitRemaining === 0 && apiRateLimitResetTime ?
-                                        <span style={{ color: '#ff6b6b' }}>Limits reset at {formatResetTime(apiRateLimitResetTime)}</span>
-                                        : 'BlockCypher Free Tier'
-                                    }
-                                </div>
-                            </div>
-
-                            {/* Sync Timer Card */}
-                            <div style={{ flex: 1, background: 'var(--glass-bg)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
-                                    <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{t('next_network_sync')}</span>
-                                    <span style={{ color: 'var(--primary-accent)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{syncCountdown}s</span>
-                                </div>
-                                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                                    <div style={{ width: `${(syncCountdown / 120) * 100}%`, height: '100%', background: 'linear-gradient(90deg, transparent, var(--primary-accent))', transition: 'width 1s linear', boxShadow: '0 0 10px var(--primary-accent)' }} />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {wallets.map((wallet) => (
-                                <WalletCard
-                                    key={wallet.id}
-                                    wallet={wallet}
-                                    usdRate={ltcUsdRate}
-                                    onEditSubmit={submitEditWallet}
-                                    onDelete={handleDeleteWallet}
-                                    onOpenDetails={openWalletDetails}
-                                />
-                            ))}
-                        </div>
-                    </>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {wallets.map((wallet) => (
+                            <WalletCard
+                                key={wallet.id}
+                                wallet={wallet}
+                                usdRate={ltcUsdRate}
+                                onEditSubmit={submitEditWallet}
+                                onDelete={handleDeleteWallet}
+                                onOpenDetails={openWalletDetails}
+                            />
+                        ))}
+                    </div>
                 )}
-
             </div>
 
             {selectedWallet && (

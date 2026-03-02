@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 
 export function useDashboardWallets() {
     const state = useWalletState();
-    const sync = useWalletSync(state.wallets, state.setWallets, state.token);
+    const sync = useWalletSync(state.wallets, state.setWallets, state.token, state.fetchLtcRate);
     const details = useWalletDetails();
     const actions = useWalletActions(
         state.setWallets,

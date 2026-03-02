@@ -41,6 +41,7 @@ export const translations = {
         'next_network_sync': 'Next Network Sync Process',
         'api_limit_remaining': 'Network API Limit (req/h):',
         'api_limit_reached': 'API Limit Reached! Synching paused.',
+        'ltc_price': 'Market Price:',
         // Wallet Card & Forms
         'auto_sync': 'Auto-Sync:',
         'syncing': 'Syncing...',
@@ -138,6 +139,7 @@ export const translations = {
         'next_network_sync': 'Sonraki Ağ Senkronizasyonu',
         'api_limit_remaining': 'Ağ API Limiti (İstek/Saat):',
         'api_limit_reached': 'API Limitine Ulaşıldı! Senkronizasyon duraklatıldı.',
+        'ltc_price': 'Piyasa Fiyatı:',
         // Wallet Card & Forms
         'auto_sync': 'Oto-Senk:',
         'syncing': 'Eşitleniyor...',
