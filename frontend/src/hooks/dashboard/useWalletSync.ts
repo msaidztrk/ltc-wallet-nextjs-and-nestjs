@@ -6,12 +6,13 @@ import { Wallet } from '../../types/wallet.types';
 import { useTranslation } from '../useTranslation';
 import { useSettings } from '../useSettings';
 
-export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<React.SetStateAction<Wallet[]>>, token: string | null) {
+export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<React.SetStateAction<Wallet[]>>, token: string | null, fetchLtcRate?: () => Promise<void>) {
     const { settings } = useSettings();
     const syncInterval = settings.sync_interval || 120;
     const [syncCountdown, setSyncCountdown] = useState(syncInterval);
     const [apiRateLimitRemaining, setApiRateLimitRemaining] = useState<number | null>(null);
     const [apiRateLimitResetTime, setApiRateLimitResetTime] = useState<number | null>(null);
+    const [isSyncPaused, setIsSyncPaused] = useState(false);
     const { t } = useTranslation();
 
     useEffect(() => {
@@ -26,13 +27,46 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
         return () => window.removeEventListener('apiRateLimitUpdate', handleRateLimitUpdate);
     }, [t]);
 
+    // Pause sync when browser window loses focus (e.g. user switches to another app)
+    useEffect(() => {
+        const handleBlur = () => {
+            setIsSyncPaused(true);
+            toast('⏸ Sync paused — window is inactive', {
+                id: 'sync-paused-toast',
+                duration: Infinity,
+                icon: '🔕',
+                style: { background: '#1a1a2e', color: '#aaa', border: '1px solid rgba(255,255,255,0.1)' }
+            });
+        };
+
+        const handleFocus = () => {
+            setIsSyncPaused(false);
+            toast.dismiss('sync-paused-toast');
+            toast.success('▶ Sync resumed', { id: 'sync-resumed-toast', duration: 3000 });
+        };
+
+        window.addEventListener('blur', handleBlur);
+        window.addEventListener('focus', handleFocus);
+        return () => {
+            window.removeEventListener('blur', handleBlur);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, []);
+
     useEffect(() => {
         if (wallets.length === 0) return;
 
         let isSyncing = false;
 
         const updateBalancesSequentially = async () => {
+            // Do not fetch if window is not focused
+            if (!document.hasFocus()) return;
+
             isSyncing = true;
+
+            // Sync market price first
+            if (fetchLtcRate) await fetchLtcRate();
+
             let freshWallets: Wallet[] = [];
             const { data: { session } } = await supabase.auth.getSession();
             const activeToken = session?.access_token;
@@ -108,5 +142,5 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [wallets.length, token, syncInterval, t]);
 
-    return { syncCountdown, apiRateLimitRemaining, apiRateLimitResetTime };
+    return { syncCountdown, apiRateLimitRemaining, apiRateLimitResetTime, isSyncPaused };
 }
