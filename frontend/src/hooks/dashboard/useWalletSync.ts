@@ -15,6 +15,7 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
     const [apiRateLimitRemaining, setApiRateLimitRemaining] = useState<number | null>(null);
     const [apiRateLimitResetTime, setApiRateLimitResetTime] = useState<number | null>(null);
     const [isSyncPaused, setIsSyncPaused] = useState(false);
+    const [forceSync, setForceSync] = useState(0);
     const { t } = useTranslation();
 
     useEffect(() => {
@@ -45,6 +46,7 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
             setIsSyncPaused(false);
             toast.dismiss('sync-paused-toast');
             toast.success('▶ Sync resumed', { id: 'sync-resumed-toast', duration: 3000 });
+            setForceSync(prev => prev + 1);
         };
 
         window.addEventListener('blur', handleBlur);
@@ -61,11 +63,12 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
         let isSyncing = false;
 
         const updateBalancesSequentially = async () => {
+            const needsInitialSync = wallets.some(w => w.liveBalance === undefined);
 
-            if (!document.hasFocus()) return;
+            if (!document.hasFocus() && !needsInitialSync) return;
 
             const now = Date.now();
-            if (now - lastSyncAttempt < 10000) return;
+            if (now - lastSyncAttempt < 2000) return;
             lastSyncAttempt = now;
 
             isSyncing = true;
@@ -146,7 +149,7 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
         const intervalId = setInterval(tick, 1000);
         return () => clearInterval(intervalId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [wallets.length, token, syncInterval, t]);
+    }, [wallets.length, token, syncInterval, t, forceSync]);
 
     return { syncCountdown, apiRateLimitRemaining, apiRateLimitResetTime, isSyncPaused };
 }
