@@ -31,7 +31,25 @@ export class LitecoinService {
     static async getAddressDetails(publicAddress: string) {
         return blockcypherAxios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}`)
             .then(res => res.data)
-            .catch(e => {
+            .catch(async e => {
+
+                if (e.response && (e.response.status === 429 || e.response.status === 403)) {
+                    try {
+                        const res = await axios.get(`https://litecoinspace.org/api/address/${publicAddress}`);
+                        const lsData = res.data;
+                        const balanceSats = (lsData.chain_stats.funded_txo_sum - lsData.chain_stats.spent_txo_sum) +
+                            (lsData.mempool_stats.funded_txo_sum - lsData.mempool_stats.spent_txo_sum);
+
+                        return {
+                            final_balance: balanceSats,
+                            txrefs: []
+                        };
+                    } catch (lsError) {
+                        toast.error('Network Error: Both Blockcypher and Fallback APIs failed');
+                        return null;
+                    }
+                }
+
                 console.error(e);
                 toast.error('Network Error: Failed to fetch blockchain data');
                 return null;
@@ -41,7 +59,20 @@ export class LitecoinService {
     static async getBalance(publicAddress: string) {
         return blockcypherAxios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}/balance`)
             .then(res => res.data)
-            .catch(() => null);
+            .catch(async (e) => {
+                if (e.response && (e.response.status === 429 || e.response.status === 403)) {
+                    try {
+                        const res = await axios.get(`https://litecoinspace.org/api/address/${publicAddress}`);
+                        const lsData = res.data;
+                        const balanceSats = (lsData.chain_stats.funded_txo_sum - lsData.chain_stats.spent_txo_sum) +
+                            (lsData.mempool_stats.funded_txo_sum - lsData.mempool_stats.spent_txo_sum);
+                        return { final_balance: balanceSats };
+                    } catch (lsError) {
+                        return null;
+                    }
+                }
+                return null;
+            });
     }
 
     static async getLtcToUsdRate() {
@@ -51,33 +82,57 @@ export class LitecoinService {
     }
 
     static async getEstimatedFee(publicAddress: string, amountToSendLtc: number): Promise<number | null> {
-        try {
-            const res = await blockcypherAxios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}?unspentOnly=true`);
-            const utxos = res.data.txrefs || [];
-
-            const amountToSendSats = Math.floor(amountToSendLtc * 100000000);
-            let totalAvailableSats = 0;
-            let dynamicFeeSats = 2000;
-            const feeRatePerByte = 10;
-            const baseOutputBytes = (2 * 34) + 10;
-            let inputsUsedCount = 0;
-
-            for (const utxo of utxos) {
-                inputsUsedCount++;
-                dynamicFeeSats = (baseOutputBytes + (inputsUsedCount * 148)) * feeRatePerByte;
-                totalAvailableSats += utxo.value;
-
-                if (totalAvailableSats >= amountToSendSats + dynamicFeeSats) break;
-            }
-
-            if (totalAvailableSats < amountToSendSats + dynamicFeeSats) {
+        return blockcypherAxios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}?unspentOnly=true`)
+            .then(res => LitecoinService.calculateFeeFromBlockcypherUTXOs(res.data.txrefs || [], amountToSendLtc))
+            .catch(async e => {
+                if (e.response && (e.response.status === 429 || e.response.status === 403)) {
+                    try {
+                        const lsRes = await axios.get(`https://litecoinspace.org/api/address/${publicAddress}/utxo`);
+                        return LitecoinService.calculateFeeFromLitecoinspaceUTXOs(lsRes.data || [], amountToSendLtc);
+                    } catch (lsError) {
+                        return null;
+                    }
+                }
+                console.error('Fee estimation failed:', e);
                 return null;
-            }
+            });
+    }
 
-            return dynamicFeeSats / 100000000;
-        } catch (e) {
-            console.error('Fee estimation failed:', e);
-            return null;
+    private static calculateFeeFromBlockcypherUTXOs(utxos: any[], amountToSendLtc: number): number | null {
+        const amountToSendSats = Math.floor(amountToSendLtc * 100000000);
+        let totalAvailableSats = 0;
+        let dynamicFeeSats = 2000;
+        const feeRatePerByte = 10;
+        const baseOutputBytes = (2 * 34) + 10;
+        let inputsUsedCount = 0;
+
+        for (const utxo of utxos) {
+            inputsUsedCount++;
+            dynamicFeeSats = (baseOutputBytes + (inputsUsedCount * 148)) * feeRatePerByte;
+            totalAvailableSats += utxo.value;
+            if (totalAvailableSats >= amountToSendSats + dynamicFeeSats) break;
         }
+
+        if (totalAvailableSats < amountToSendSats + dynamicFeeSats) return null;
+        return dynamicFeeSats / 100000000;
+    }
+
+    private static calculateFeeFromLitecoinspaceUTXOs(utxos: any[], amountToSendLtc: number): number | null {
+        const amountToSendSats = Math.floor(amountToSendLtc * 100000000);
+        let totalAvailableSats = 0;
+        let dynamicFeeSats = 2000;
+        const feeRatePerByte = 10;
+        const baseOutputBytes = (2 * 34) + 10;
+        let inputsUsedCount = 0;
+
+        for (const utxo of utxos) {
+            inputsUsedCount++;
+            dynamicFeeSats = (baseOutputBytes + (inputsUsedCount * 148)) * feeRatePerByte;
+            totalAvailableSats += utxo.value;
+            if (totalAvailableSats >= amountToSendSats + dynamicFeeSats) break;
+        }
+
+        if (totalAvailableSats < amountToSendSats + dynamicFeeSats) return null;
+        return dynamicFeeSats / 100000000;
     }
 }

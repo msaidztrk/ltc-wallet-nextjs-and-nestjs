@@ -6,6 +6,8 @@ import { Wallet } from '../../types/wallet.types';
 import { useTranslation } from '../useTranslation';
 import { useSettings } from '../useSettings';
 
+let lastSyncAttempt = 0;
+
 export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<React.SetStateAction<Wallet[]>>, token: string | null, fetchLtcRate?: () => Promise<void>) {
     const { settings } = useSettings();
     const syncInterval = settings.sync_interval || 120;
@@ -27,7 +29,7 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
         return () => window.removeEventListener('apiRateLimitUpdate', handleRateLimitUpdate);
     }, [t]);
 
-    // Pause sync when browser window loses focus (e.g. user switches to another app)
+
     useEffect(() => {
         const handleBlur = () => {
             setIsSyncPaused(true);
@@ -59,8 +61,12 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
         let isSyncing = false;
 
         const updateBalancesSequentially = async () => {
-            // Do not fetch if window is not focused
+
             if (!document.hasFocus()) return;
+
+            const now = Date.now();
+            if (now - lastSyncAttempt < 10000) return;
+            lastSyncAttempt = now;
 
             isSyncing = true;
 

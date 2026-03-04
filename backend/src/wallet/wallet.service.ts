@@ -192,9 +192,15 @@ export class WalletService {
             } catch (blockError) {
                 if (blockError.response && blockError.response.status === 429) {
                     remaining = 0;
+                    // FALLBACK TO LITECOINSPACE WHEN RATE LIMITED
+                    try {
+                        balanceSats = await this.blockchainService.getLitecoinSpaceBalance(publicAddress);
+                    } catch (lsError) {
+                        throw blockError; // If fallback also fails, throw original rate limit error
+                    }
+                } else {
                     throw blockError;
                 }
-                throw blockError;
             }
 
             return {
