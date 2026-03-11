@@ -7,6 +7,7 @@ import { useTranslation } from '../useTranslation';
 import { useSettings } from '../useSettings';
 
 let lastSyncAttempt = 0;
+let hasExecutedInitialSync = false;
 
 export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<React.SetStateAction<Wallet[]>>, token: string | null, fetchLtcRate?: () => Promise<void>) {
     const { settings } = useSettings();
@@ -63,13 +64,12 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
         let isSyncing = false;
 
         const updateBalancesSequentially = async () => {
-            const needsInitialSync = wallets.some(w => w.liveBalance === undefined);
-
-            if (!document.hasFocus() && !needsInitialSync) return;
+            if (!document.hasFocus() && hasExecutedInitialSync) return;
 
             const now = Date.now();
             if (now - lastSyncAttempt < 2000) return;
             lastSyncAttempt = now;
+            hasExecutedInitialSync = true;
 
             isSyncing = true;
 
@@ -99,6 +99,11 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
                         setApiRateLimitRemaining(0);
                         if (response.resetTime) setApiRateLimitResetTime(response.resetTime);
                         toast.error(t('api_limit_reached'), { id: 'rate-limit-toast' });
+                        fetchedBalances[freshWallets[i].id] = 'Limit Exceeded';
+                        stateUpdated = true;
+                    } else {
+                        fetchedBalances[freshWallets[i].id] = 'Error';
+                        stateUpdated = true;
                     }
                     break;
                 }

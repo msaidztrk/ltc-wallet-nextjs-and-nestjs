@@ -28,12 +28,15 @@ blockcypherAxios.interceptors.response.use(
 );
 
 export class LitecoinService {
+    private static utxoCache: Map<string, { source: 'blockcypher' | 'litecoinspace', utxos: any[], timestamp: number }> = new Map();
+
     static async getAddressDetails(publicAddress: string) {
         return blockcypherAxios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}`)
             .then(res => res.data)
             .catch(async e => {
+                const isRateLimited = (e.response && (e.response.status === 429 || e.response.status === 403)) || e.message === 'Network Error';
 
-                if (e.response && (e.response.status === 429 || e.response.status === 403)) {
+                if (isRateLimited) {
                     try {
                         const res = await axios.get(`https://litecoinspace.org/api/address/${publicAddress}`);
                         const lsData = res.data;
@@ -60,7 +63,9 @@ export class LitecoinService {
         return blockcypherAxios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}/balance`)
             .then(res => res.data)
             .catch(async (e) => {
-                if (e.response && (e.response.status === 429 || e.response.status === 403)) {
+                const isRateLimited = (e.response && (e.response.status === 429 || e.response.status === 403)) || e.message === 'Network Error';
+
+                if (isRateLimited) {
                     try {
                         const res = await axios.get(`https://litecoinspace.org/api/address/${publicAddress}`);
                         const lsData = res.data;
@@ -82,13 +87,31 @@ export class LitecoinService {
     }
 
     static async getEstimatedFee(publicAddress: string, amountToSendLtc: number): Promise<number | null> {
+        // Check cache to avoid spamming the API on every keystroke
+        const cached = this.utxoCache.get(publicAddress);
+        if (cached && Date.now() - cached.timestamp < 60000) { // 60-second cache
+            if (cached.source === 'blockcypher') {
+                return LitecoinService.calculateFeeFromBlockcypherUTXOs(cached.utxos, amountToSendLtc);
+            } else {
+                return LitecoinService.calculateFeeFromLitecoinspaceUTXOs(cached.utxos, amountToSendLtc);
+            }
+        }
+
         return blockcypherAxios.get(`${BLOCKCYPHER_API_URL}/addrs/${publicAddress}?unspentOnly=true`)
-            .then(res => LitecoinService.calculateFeeFromBlockcypherUTXOs(res.data.txrefs || [], amountToSendLtc))
+            .then(res => {
+                const utxos = res.data.txrefs || [];
+                this.utxoCache.set(publicAddress, { source: 'blockcypher', utxos, timestamp: Date.now() });
+                return LitecoinService.calculateFeeFromBlockcypherUTXOs(utxos, amountToSendLtc);
+            })
             .catch(async e => {
-                if (e.response && (e.response.status === 429 || e.response.status === 403)) {
+                const isRateLimited = (e.response && (e.response.status === 429 || e.response.status === 403)) || e.message === 'Network Error';
+
+                if (isRateLimited) {
                     try {
                         const lsRes = await axios.get(`https://litecoinspace.org/api/address/${publicAddress}/utxo`);
-                        return LitecoinService.calculateFeeFromLitecoinspaceUTXOs(lsRes.data || [], amountToSendLtc);
+                        const utxos = lsRes.data || [];
+                        this.utxoCache.set(publicAddress, { source: 'litecoinspace', utxos, timestamp: Date.now() });
+                        return LitecoinService.calculateFeeFromLitecoinspaceUTXOs(utxos, amountToSendLtc);
                     } catch (lsError) {
                         return null;
                     }
