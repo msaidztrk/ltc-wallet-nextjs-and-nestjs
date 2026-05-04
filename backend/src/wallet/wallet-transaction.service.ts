@@ -9,13 +9,20 @@ export class WalletTransactionService {
 
 
     async fetchActiveUTXOs(address: string) {
-        const blockcypherResponse = await axios.get(`${BLOCKCYPHER_BASE_URL}/addrs/${address}?unspentOnly=true`);
-        const utxos = blockcypherResponse.data.txrefs || [];
+        let utxos = [];
+        try {
+            const bcRes = await axios.get(`${BLOCKCYPHER_BASE_URL}/addrs/${address}?unspentOnly=true`);
+            const bcUtxos = bcRes.data.txrefs || [];
+            utxos = bcUtxos.map(u => ({ tx_hash: u.tx_hash, tx_output_n: u.tx_output_n, value: u.value }));
+        } catch (error) {
+            console.warn('[FALLBACK] Blockcypher failed, using Litecoinspace for UTXOs');
+            const lsRes = await axios.get(`https://litecoinspace.org/api/address/${address}/utxo`);
+            utxos = lsRes.data.map(u => ({ tx_hash: u.txid, tx_output_n: u.vout, value: u.value }));
+        }
 
         if (utxos.length === 0) {
             throw new Error('Insufficient balance. No confirmed UTXOs found on the network.');
         }
-
         return utxos;
     }
 
@@ -28,12 +35,20 @@ export class WalletTransactionService {
         let inputsUsedCount = 0;
 
         for (const utxo of utxos) {
-            const rawTxResponse = await axios.get(`${BLOCKCYPHER_BASE_URL}/txs/${utxo.tx_hash}?includeHex=true`);
+            let hex = '';
+            try {
+                const rawTxResponse = await axios.get(`${BLOCKCYPHER_BASE_URL}/txs/${utxo.tx_hash}?includeHex=true`);
+                hex = rawTxResponse.data.hex;
+            } catch (error) {
+                console.warn(`[FALLBACK] Fetching hex for ${utxo.tx_hash} from Litecoinspace`);
+                const lsResponse = await axios.get(`https://litecoinspace.org/api/tx/${utxo.tx_hash}/hex`);
+                hex = lsResponse.data;
+            }
 
             psbt.addInput({
                 hash: utxo.tx_hash,
                 index: utxo.tx_output_n,
-                nonWitnessUtxo: Buffer.from(rawTxResponse.data.hex, 'hex'),
+                nonWitnessUtxo: Buffer.from(hex, 'hex'),
             });
 
             inputsUsedCount++;
@@ -68,9 +83,17 @@ export class WalletTransactionService {
 
 
     async broadcastRawTransaction(rawTransactionHex: string) {
-        const pushResponse = await axios.post(`${BLOCKCYPHER_BASE_URL}/txs/push`, {
-            tx: rawTransactionHex
-        });
-        return pushResponse.data;
+        try {
+            const pushResponse = await axios.post(`${BLOCKCYPHER_BASE_URL}/txs/push`, {
+                tx: rawTransactionHex
+            });
+            return { tx: { hash: pushResponse.data.tx.hash } };
+        } catch (error) {
+            console.warn('[FALLBACK] Blockcypher push failed, broadcasting via Litecoinspace');
+            const lsRes = await axios.post(`https://litecoinspace.org/api/tx`, rawTransactionHex, {
+                headers: { 'Content-Type': 'text/plain' }
+            });
+            return { tx: { hash: lsRes.data } };
+        }
     }
 }

@@ -8,6 +8,7 @@ import { useSettings } from '../useSettings';
 
 let lastSyncAttempt = 0;
 let hasExecutedInitialSync = false;
+let globalIsSyncing = false;
 
 export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<React.SetStateAction<Wallet[]>>, token: string | null, fetchLtcRate?: () => Promise<void>) {
     const { settings } = useSettings();
@@ -16,7 +17,6 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
     const [apiRateLimitRemaining, setApiRateLimitRemaining] = useState<number | null>(null);
     const [apiRateLimitResetTime, setApiRateLimitResetTime] = useState<number | null>(null);
     const [isSyncPaused, setIsSyncPaused] = useState(false);
-    const [forceSync, setForceSync] = useState(0);
     const { t } = useTranslation();
 
     useEffect(() => {
@@ -47,7 +47,6 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
             setIsSyncPaused(false);
             toast.dismiss('sync-paused-toast');
             toast.success('▶ Sync resumed', { id: 'sync-resumed-toast', duration: 3000 });
-            setForceSync(prev => prev + 1);
         };
 
         window.addEventListener('blur', handleBlur);
@@ -61,20 +60,19 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
     useEffect(() => {
         if (wallets.length === 0) return;
 
-        let isSyncing = false;
-
         const updateBalancesSequentially = async () => {
+            if (globalIsSyncing) return;
             if (!document.hasFocus() && hasExecutedInitialSync) return;
 
             const now = Date.now();
             if (now - lastSyncAttempt < 2000) return;
             lastSyncAttempt = now;
             hasExecutedInitialSync = true;
+            globalIsSyncing = true;
 
-            isSyncing = true;
-
-            // Sync market price first
-            if (fetchLtcRate) await fetchLtcRate();
+            try {
+                // Sync market price first
+                if (fetchLtcRate) await fetchLtcRate();
 
             let freshWallets: Wallet[] = [];
             const { data: { session } } = await supabase.auth.getSession();
@@ -132,7 +130,9 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
                 })));
             }
 
-            isSyncing = false;
+            } finally {
+                globalIsSyncing = false;
+            }
         };
 
         updateBalancesSequentially();
@@ -141,10 +141,12 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
         let countdownTimer = syncInterval;
 
         const tick = () => {
+            if (!document.hasFocus()) return;
+
             countdownTimer -= 1;
 
             if (countdownTimer <= 0) {
-                if (!isSyncing) updateBalancesSequentially();
+                if (!globalIsSyncing) updateBalancesSequentially();
                 countdownTimer = syncInterval;
             }
 
@@ -154,7 +156,7 @@ export function useWalletSync(wallets: Wallet[], setWallets: React.Dispatch<Reac
         const intervalId = setInterval(tick, 1000);
         return () => clearInterval(intervalId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [wallets.length, token, syncInterval, t, forceSync]);
+    }, [wallets.length, token, syncInterval]);
 
     return { syncCountdown, apiRateLimitRemaining, apiRateLimitResetTime, isSyncPaused };
 }

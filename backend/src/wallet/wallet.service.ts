@@ -171,7 +171,8 @@ export class WalletService {
                 resetTime: this.blockchainService.getApiResetTime()
             };
         } catch (error) {
-            if (error.response && error.response.status === 429) {
+            if (error?.response?.status === 429) {
+                this.blockchainService.markAsBanned();
                 return { status: 'success', remaining: 0, resetTime: this.blockchainService.getApiResetTime() };
             }
             throw new InternalServerErrorException('Could not check API rate limit');
@@ -190,13 +191,13 @@ export class WalletService {
             try {
                 balanceSats = await this.blockchainService.getBlockcypherBalance(publicAddress);
             } catch (blockError) {
-                if (blockError.response && blockError.response.status === 429) {
+                if (blockError?.response?.status === 429) {
+                    this.blockchainService.markAsBanned();
                     remaining = 0;
-                    // FALLBACK TO LITECOINSPACE WHEN RATE LIMITED
                     try {
                         balanceSats = await this.blockchainService.getLitecoinSpaceBalance(publicAddress);
                     } catch (lsError) {
-                        throw blockError; // If fallback also fails, throw original rate limit error
+                        throw blockError;
                     }
                 } else {
                     throw blockError;
@@ -211,7 +212,8 @@ export class WalletService {
             };
         } catch (error) {
             console.error('getWalletBalanceFromBlockchain Error:', error?.response?.data || error.message);
-            if (error.response && error.response.status === 429) {
+            if (error?.response?.status === 429) {
+                this.blockchainService.markAsBanned();
                 return { status: 'error', reason: 'rate_limit', apiLimit: 0, resetTime: this.blockchainService.getApiResetTime() };
             }
             throw new InternalServerErrorException('Failed to fetch balance from blockchain node');

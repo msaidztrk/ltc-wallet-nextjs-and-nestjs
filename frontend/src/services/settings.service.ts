@@ -9,14 +9,25 @@ export interface UserSettings {
     updated_at?: string;
 }
 
+let globalSettingsPromise: Promise<UserSettings | null> | null = null;
+let lastSettingsFetchTime = 0;
+
 export class SettingsService {
     static async getSettings(token: string): Promise<UserSettings | null> {
-        return apiClient.get('/settings', {
+        const now = Date.now();
+        if (globalSettingsPromise && now - lastSettingsFetchTime < 5000) {
+            return globalSettingsPromise;
+        }
+
+        globalSettingsPromise = apiClient.get('/settings', {
             headers: { Authorization: `Bearer ${token}` }
         }).catch((err) => {
             console.error('SettingsService.getSettings error:', err);
             return null;
         }) as Promise<UserSettings | null>;
+
+        lastSettingsFetchTime = now;
+        return globalSettingsPromise;
     }
 
     static async updateSettings(token: string, settings: Partial<UserSettings>): Promise<UserSettings | null> {

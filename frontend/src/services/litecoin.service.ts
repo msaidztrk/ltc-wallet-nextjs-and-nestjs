@@ -43,9 +43,33 @@ export class LitecoinService {
                         const balanceSats = (lsData.chain_stats.funded_txo_sum - lsData.chain_stats.spent_txo_sum) +
                             (lsData.mempool_stats.funded_txo_sum - lsData.mempool_stats.spent_txo_sum);
 
+                        const txsRes = await axios.get(`https://litecoinspace.org/api/address/${publicAddress}/txs`);
+                        const txrefs = txsRes.data.map((tx: any) => {
+                            let valueDiff = 0;
+                            if (tx.vout) {
+                                for (const out of tx.vout) {
+                                    if (out.scriptpubkey_address === publicAddress) valueDiff += out.value;
+                                }
+                            }
+                            if (tx.vin) {
+                                for (const input of tx.vin) {
+                                    if (input.prevout && input.prevout.scriptpubkey_address === publicAddress) {
+                                        valueDiff -= input.prevout.value;
+                                    }
+                                }
+                            }
+                            const isReceived = valueDiff > 0;
+                            return {
+                                tx_hash: tx.txid,
+                                tx_input_n: isReceived ? -1 : 0,
+                                value: Math.abs(valueDiff),
+                                confirmed: tx.status.confirmed ? new Date(tx.status.block_time * 1000).toISOString() : null
+                            };
+                        });
+
                         return {
                             final_balance: balanceSats,
-                            txrefs: []
+                            txrefs: txrefs
                         };
                     } catch (lsError) {
                         toast.error('Network Error: Both Blockcypher and Fallback APIs failed');
