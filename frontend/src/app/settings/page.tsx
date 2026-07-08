@@ -13,6 +13,26 @@ export default function Settings() {
     const { settings, isLoading: isSettingsLoading, updateSetting } = useSettings();
     const { t } = useTranslation();
     const [isPageLoading, setIsPageLoading] = useState(true);
+    const [newPassword, setNewPassword] = useState('');
+    const [passwordMessage, setPasswordMessage] = useState('');
+    const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+    const handlePasswordUpdate = async () => {
+        if (!newPassword || newPassword.length < 6) {
+            setPasswordMessage('Hata: Şifre en az 6 karakter olmalıdır.');
+            return;
+        }
+        setIsUpdatingPassword(true);
+        setPasswordMessage('');
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) {
+            setPasswordMessage(`Hata: ${error.message}`);
+        } else {
+            setPasswordMessage('Şifre başarıyla güncellendi!');
+            setNewPassword('');
+        }
+        setIsUpdatingPassword(false);
+    };
 
     useEffect(() => {
         checkUserAndLoadSettings();
@@ -243,6 +263,62 @@ export default function Settings() {
                                 <option value={600}>600s</option>
                             </select>
                         </div>
+                    </div>
+
+                    {/* Change Password - Compact Row */}
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1rem',
+                        padding: '1.25rem',
+                        borderTop: '1px solid rgba(255,255,255,0.03)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ color: 'var(--primary-accent)', opacity: 0.8 }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '0.95rem', fontWeight: 600, margin: 0 }}>Şifreyi Değiştir</h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>Yeni şifre belirle (En az 6 karakter)</p>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <input
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="Yeni Şifre"
+                                style={{
+                                    padding: '0.5rem',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--glass-border)',
+                                    background: 'rgba(0,0,0,0.2)',
+                                    color: 'var(--text-main)',
+                                    flex: 1
+                                }}
+                            />
+                            <button
+                                onClick={handlePasswordUpdate}
+                                disabled={isUpdatingPassword}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '6px',
+                                    background: 'var(--primary-accent)',
+                                    color: '#000',
+                                    fontWeight: 600,
+                                    border: 'none',
+                                    cursor: isUpdatingPassword ? 'not-allowed' : 'pointer',
+                                    opacity: isUpdatingPassword ? 0.7 : 1
+                                }}
+                            >
+                                {isUpdatingPassword ? 'Güncelleniyor...' : 'Güncelle'}
+                            </button>
+                        </div>
+                        {passwordMessage && (
+                            <p style={{ fontSize: '0.8rem', margin: 0, color: passwordMessage.includes('Hata') ? '#ff6b6b' : 'var(--primary-accent)' }}>
+                                {passwordMessage}
+                            </p>
+                        )}
                     </div>
 
                 </div>

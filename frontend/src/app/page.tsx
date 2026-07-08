@@ -13,6 +13,11 @@ export default function AuthPage() {
 
   // Check if the user is already logged in (Persistent Session)
   useEffect(() => {
+    const savedEmail = localStorage.getItem('savedEmail');
+    if (savedEmail) {
+      setEmail(savedEmail);
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         router.push('/dashboard');
@@ -50,9 +55,30 @@ export default function AuthPage() {
     if (error) {
       setErrorStatus(error.message);
     } else {
+      localStorage.setItem('savedEmail', email);
       router.push('/dashboard');
     }
 
+    setIsLoading(false);
+  };
+
+  const handleResetPassword = async () => {
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      setErrorStatus('Şifre sıfırlama için önce geçerli bir email giriniz.');
+      return;
+    }
+    setIsLoading(true);
+    setErrorStatus(null);
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/settings`,
+    });
+    
+    if (error) {
+      setErrorStatus(error.message);
+    } else {
+      setErrorStatus('Şifre sıfırlama bağlantısı email adresinize gönderildi.');
+    }
     setIsLoading(false);
   };
 
@@ -108,7 +134,16 @@ export default function AuthPage() {
           </div>
 
           <div>
-            <label className="text-label" htmlFor="password">Master Password</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <label className="text-label" htmlFor="password">Master Password</label>
+              <button 
+                type="button" 
+                onClick={handleResetPassword}
+                style={{ background: 'transparent', border: 'none', color: 'var(--primary-accent)', fontSize: '0.75rem', cursor: 'pointer', padding: 0 }}
+              >
+                Şifremi Unuttum
+              </button>
+            </div>
             <input
               id="password"
               type="password"
@@ -116,7 +151,6 @@ export default function AuthPage() {
               placeholder="••••••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
             />
           </div>
 
